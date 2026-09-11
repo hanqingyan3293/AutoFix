@@ -7,6 +7,14 @@
 > ⚠️ **重要提示**：v1.0.0 尚未在真实机器上完成全量验证，行为描述来自代码实现。
 > 请在测试机上确认后再用于生产环境。
 
+## 界面预览
+
+| 环境检测 | 安装错误修复 |
+| --- | --- |
+| ![环境检测](../docs/images/screenshots/01-environment-check.png) | ![安装错误修复](../docs/images/screenshots/02-install-error-fixes.png) |
+| **产品卸载清理**（12 项工作台） | **许可管理** |
+| ![产品卸载清理](../docs/images/screenshots/03-uninstall-workbench.png) | ![许可管理](../docs/images/screenshots/04-license-management.png) |
+
 ## 下载哪一个
 
 | 文件 | 适用环境 | 说明 |

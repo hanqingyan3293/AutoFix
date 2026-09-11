@@ -15,6 +15,17 @@ Chinese: [README.md](./README.md)
 - **Per-action confirmation** — The default button is **Cancel**; deleting user project files requires typing `YES`
 - **Shared-component protection** — Components shared across vendors (such as FlexNet Publisher) are listed individually for you to keep or remove; the default is keep
 
+
+## Screenshots
+
+| Environment check | Install error fixes |
+| --- | --- |
+| ![Environment check](docs/images/screenshots/01-environment-check.png) | ![Install error fixes](docs/images/screenshots/02-install-error-fixes.png) |
+| **Product uninstall** (12-item workbench) | **License management** |
+| ![Product uninstall](docs/images/screenshots/03-uninstall-workbench.png) | ![License management](docs/images/screenshots/04-license-management.png) |
+
+Category navigation on the left, feature button grid on the right, execution log at the bottom.
+
 ## Feature Overview
 
 | Category | Count | Contents |
@@ -89,6 +100,7 @@ No third-party DLL dependencies — a single file is enough to run.
 src/                 Main application (WinForms, .NET Framework 4.0 / 4.7.2)
 docs/                Documentation, release notes, maintainer checklists
 docs/images/icon/    Icon assets (multi-size PNG + ICO + SVG source)
+docs/images/screenshots/  Application screenshots
 ```
 
 ## Documentation

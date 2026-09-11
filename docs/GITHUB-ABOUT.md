@@ -51,10 +51,12 @@ agpl
 
 ## Social preview
 
-建议准备一张 1280×640 的预览图。可直接使用仓库内的图标资源：
+建议准备一张 1280×640 的预览图。可用素材：
 
-- `docs/images/icon/Autodesk-Fix_512.png` 或 `Autodesk-Fix_1024.png`（白底圆角 + 黑色 F 标记）
-- 叠加程序主界面截图（左侧分类导航 + 功能网格 + 日志区）与标题文字
+- 程序界面截图：`docs/images/screenshots/03-uninstall-workbench.png`（12 项工作台，信息量最足）
+- 图标：`docs/images/icon/Autodesk-Fix_512.png` 或 `Autodesk-Fix_1024.png`（白底圆角 + 黑色 F 标记）
+
+把截图与图标合成到 1280×640 画布，叠加「Autodesk Fix Toolbox」标题文字即可。
 
 注意：**不要使用 Autodesk 的商标图形或官方 Logo**，文字标注「Autodesk Fix Toolbox」即可。
 

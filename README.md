@@ -15,6 +15,17 @@ English: [README.en.md](./README.en.md)
 - **破坏性操作逐个确认** —— 默认按钮落在「取消」；删除用户项目文件要求手动输入 `YES`
 - **共用组件保护** —— 被多个厂商共用的组件（如 FlexNet Publisher）由你逐项决定保留或删除，默认保留
 
+
+## 界面预览
+
+| 环境检测 | 安装错误修复 |
+| --- | --- |
+| ![环境检测](docs/images/screenshots/01-environment-check.png) | ![安装错误修复](docs/images/screenshots/02-install-error-fixes.png) |
+| **产品卸载清理**（12 项工作台） | **许可管理** |
+| ![产品卸载清理](docs/images/screenshots/03-uninstall-workbench.png) | ![许可管理](docs/images/screenshots/04-license-management.png) |
+
+左侧为分类导航，右侧为功能按钮网格，底部是执行日志。
+
 ## 功能概览
 
 | 分类 | 项数 | 内容 |
@@ -89,6 +100,7 @@ src/bin/Release/net40/Autodesk-Fix.exe
 src/                 主程序（WinForms，.NET Framework 4.0 / 4.7.2）
 docs/                文档、发布说明、维护者清单
 docs/images/icon/    图标资源（多尺寸 PNG + ICO + SVG 源文件）
+docs/images/screenshots/  运行截图
 ```
 
 ## 文档
