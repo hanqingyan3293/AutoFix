@@ -42,12 +42,11 @@ namespace AutoFix
         private static readonly Color ColHeader = Color.FromArgb(27, 33, 48);
         private static readonly Color ColMuted = Color.FromArgb(120, 130, 146);
 
-        // 网格参数：3 列
+        // 网格参数：按钮尺寸固定，列数按窗口可用宽度自动计算
         private const int BtnW = 152;
         private const int BtnH = 44;
         private const int GapX = 10;
         private const int GapY = 10;
-        private const int Cols = 3;
 
         private readonly List<Category> _cats = new List<Category>();
         private ListBox _nav;
@@ -55,6 +54,7 @@ namespace AutoFix
         private Label _catIntro;
         private Label _hint;
         private Panel _gridHost;
+        private int _gridCols = -1;
         private RichTextBox _log;
         private Label _status;
         private bool _busy;
@@ -692,6 +692,7 @@ namespace AutoFix
                 BackColor = ColContent,
                 Padding = new Padding(2, 8, 2, 8)
             };
+            _gridHost.Resize += (s, e) => LayoutGrid();
 
             content.Controls.Add(_gridHost);
             content.Controls.Add(_hint);
@@ -746,15 +747,14 @@ namespace AutoFix
             _catTitle.Text = cat.Name;
             _catIntro.Text = cat.Intro;
 
+            _gridHost.SuspendLayout();
             _gridHost.Controls.Clear();
 
-            int x = 4, y = 4, col = 0;
             foreach (FixItem item in cat.Items)
             {
                 var btn = new Button
                 {
                     Text = item.Name,
-                    Location = new Point(x, y),
                     Size = new Size(BtnW, BtnH),
                     FlatStyle = FlatStyle.Flat,
                     BackColor = Color.White,
@@ -776,24 +776,71 @@ namespace AutoFix
                 btn.Click += (s, e) => OnRun(captured);
 
                 _gridHost.Controls.Add(btn);
-
-                col++;
-                if (col >= Cols)
-                {
-                    col = 0;
-                    x = 4;
-                    y += BtnH + GapY;
-                }
-                else
-                {
-                    x += BtnW + GapX;
-                }
             }
 
+            _gridHost.ResumeLayout();
+            _gridCols = -1;
+            LayoutGrid();
+
             _hint.Text = "";
-            _status.Text = RepairService.IsAdministrator()
-                ? "已获得管理员权限 · 共 " + cat.Items.Count + " 项"
-                : "未以管理员身份运行 —— 修复功能需要管理员权限";
+            UpdateStatus();
+        }
+
+        /// <summary>按容器可用宽度自动计算列数，并重新排布功能按钮。</summary>
+        private void LayoutGrid()
+        {
+            if (_gridHost == null)
+            {
+                return;
+            }
+
+            int avail = _gridHost.ClientSize.Width - _gridHost.Padding.Horizontal;
+            if (avail < BtnW)
+            {
+                avail = BtnW;
+            }
+
+            int cols = (avail + GapX) / (BtnW + GapX);
+            if (cols < 1)
+            {
+                cols = 1;
+            }
+
+            // 列数未变则不必重排；这也避免滚动条出现引发的反复重排
+            if (cols == _gridCols && _gridHost.Controls.Count > 0)
+            {
+                return;
+            }
+            _gridCols = cols;
+
+            _gridHost.SuspendLayout();
+            try
+            {
+                int x = _gridHost.Padding.Left;
+                int y = _gridHost.Padding.Top;
+                int col = 0;
+
+                foreach (Control c in _gridHost.Controls)
+                {
+                    c.Location = new Point(x, y);
+
+                    col++;
+                    if (col >= cols)
+                    {
+                        col = 0;
+                        x = _gridHost.Padding.Left;
+                        y += BtnH + GapY;
+                    }
+                    else
+                    {
+                        x += BtnW + GapX;
+                    }
+                }
+            }
+            finally
+            {
+                _gridHost.ResumeLayout();
+            }
         }
 
         private void OnRun(FixItem item)
