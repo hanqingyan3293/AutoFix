@@ -1,5 +1,7 @@
 # Autodesk Fix Toolbox
 
+<img src="docs/images/icon/AutoFix_128.png" alt="Autodesk Fix Toolbox" width="96" height="96" align="right">
+
 面向 Windows 的 Autodesk 产品**安装故障修复与残留清理**工具箱。图形界面，完全离线，无需登录。
 
 ## 特点
@@ -84,6 +86,7 @@ AutoFixTool/bin/Release/net40/AutoFix.exe
 ```
 AutoFixTool/         主程序（WinForms，.NET Framework 4.0 / 4.7.2）
 docs/                文档、发布说明、维护者清单
+docs/images/icon/    图标资源（多尺寸 PNG + ICO + SVG 源文件）
 ```
 
 ## 文档
@@ -97,6 +100,9 @@ docs/                文档、发布说明、维护者清单
 ## 许可
 
 本项目以 [GNU AGPL-3.0](LICENSE) 许可发布。
+
+项目图标（AutoFix.ico / AutoFix.svg 及各级 PNG）为本项目自有资源，
+同样以 AGPL-3.0 发布。
 
 ```
 Copyright (C) 2026 Autodesk Fix Toolbox contributors

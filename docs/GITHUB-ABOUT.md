@@ -51,9 +51,12 @@ agpl
 
 ## Social preview
 
-建议准备一张 1280×640 的预览图。可截取程序主界面（左侧分类导航 + 功能网格 + 日志区），
-叠加标题文字。注意：**不要使用 Autodesk 的商标图形或官方 Logo**，
-文字标注「Autodesk Fix Toolbox」即可。
+建议准备一张 1280×640 的预览图。可直接使用仓库内的图标资源：
+
+- `docs/images/icon/AutoFix_512.png` 或 `AutoFix_1024.png`（白底圆角 + 黑色 F 标记）
+- 叠加程序主界面截图（左侧分类导航 + 功能网格 + 日志区）与标题文字
+
+注意：**不要使用 Autodesk 的商标图形或官方 Logo**，文字标注「Autodesk Fix Toolbox」即可。
 
 ## Releases
 
