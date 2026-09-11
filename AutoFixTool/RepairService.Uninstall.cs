@@ -268,66 +268,12 @@ namespace AutoFix
             // --- 深度清理 ---
             if (deepClean)
             {
-                Log(log, "[阶段 E] 删除残留目录 ...");
-                var locked = new List<string>();
-                foreach (string d in UninstallFolders)
+                List<string> notes = RunDeepClean(false, multiUser, log);
+                foreach (string n in notes)
                 {
-                    bool existed = false;
-                    try { existed = System.IO.Directory.Exists(d); } catch { }
-                    DeleteDirectory(d, log);
-                    if (existed)
-                    {
-                        try { if (System.IO.Directory.Exists(d)) { locked.Add(d); } } catch { }
-                    }
+                    Log(log, "  · " + n);
+                    report.AppendLine("  · " + n);
                 }
-
-                // --- Phase E3：重试被占用的目录 ---
-                if (locked.Count > 0)
-                {
-                    List<string> still = RetryLockedFolders(locked, log);
-                    if (still.Count > 0)
-                    {
-                        Log(log, "  " + still.Count + " 个目录仍被占用，已安排重启后清理");
-                    }
-                }
-
-                Log(log, "[阶段 E2] 清理快捷方式 ...");
-                int sc = CleanAutodeskShortcuts(log);
-                Log(log, "  已清理快捷方式 " + sc + " 个");
-
-                Log(log, "[阶段 F] 清理缓存 ...");
-                CleanAutodeskCaches(log);
-
-                Log(log, "[阶段 G/H] 清理服务注册与注册表 ...");
-                foreach (string s in UninstallServices)
-                {
-                    RunCommand("sc", "delete \"" + s + "\"", false);
-                }
-                foreach (string exe in UninstallIfeoExes)
-                {
-                    DeleteRegistryValue(RegistryHive.LocalMachine,
-                        @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\" + exe,
-                        "Debugger", log);
-                }
-                foreach (string cls in UninstallClassKeys)
-                {
-                    DeleteRegistryKey(RegistryHive.CurrentUser, "Software\\Classes\\" + cls, log);
-                }
-                foreach (string branch in UninstallRegistryBranches)
-                {
-                    DeleteRegistryKey(RegistryHive.LocalMachine, branch, log);
-                    DeleteRegistryKey(RegistryHive.CurrentUser, branch, log);
-                }
-
-                if (multiUser)
-                {
-                    Log(log, "[多用户清理] 处理其他用户配置文件 ...");
-                    string mu = CleanOtherUserProfiles(log);
-                    Log(log, "  " + mu);
-                    report.AppendLine(mu);
-                }
-
-                FlushInstallerServices(log);
             }
 
             // --- 复查 ---

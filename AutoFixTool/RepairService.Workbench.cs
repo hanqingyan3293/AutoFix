@@ -18,82 +18,7 @@ namespace AutoFix
         /// <summary>不卸载产品，只清理残留（对应参考项目的 Deep Clean Only）。</summary>
         internal static string DeepCleanOnly(bool multiUser, Action<string> log)
         {
-            var notes = new List<string>();
-            Log(log, "[阶段 B] 结束进程并停止服务 ...");
-            foreach (string p in UninstallKillProcs)
-            {
-                KillProcess(p + ".exe");
-            }
-            foreach (string s in UninstallServices)
-            {
-                StopService(s);
-                RunCommand("sc", "stop \"" + s + "\"", false);
-            }
-            Thread.Sleep(1000);
-
-            Log(log, "[阶段 E] 删除残留目录 ...");
-            var locked = new List<string>();
-            foreach (string d in UninstallFolders)
-            {
-                bool existed = false;
-                try { existed = Directory.Exists(d); } catch { }
-                DeleteDirectory(d, log);
-                if (existed)
-                {
-                    try { if (Directory.Exists(d)) { locked.Add(d); } } catch { }
-                }
-            }
-            if (locked.Count > 0)
-            {
-                List<string> still = RetryLockedFolders(locked, log);
-                if (still.Count > 0)
-                {
-                    notes.Add(still.Count + " 个目录仍被占用，已安排重启后清理");
-                }
-            }
-
-            Log(log, "[阶段 E2] 清理快捷方式 ...");
-            int sc = CleanAutodeskShortcuts(log);
-            notes.Add("已清理快捷方式 " + sc + " 个");
-
-            Log(log, "[阶段 F] 清理缓存 ...");
-            CleanAutodeskCaches(log);
-
-            Log(log, "[阶段 G] 清理服务注册、计划任务 ...");
-            foreach (string s in UninstallServices)
-            {
-                RunCommand("sc", "delete \"" + s + "\"", false);
-            }
-            int tasks = RemoveAutodeskScheduledTasks(log);
-            notes.Add("已删除计划任务 " + tasks + " 个");
-            int fw = RemoveAutodeskFirewallRules(log);
-            notes.Add("已删除防火墙规则 " + fw + " 条");
-
-            Log(log, "[阶段 H] 清理注册表 ...");
-            foreach (string exe in UninstallIfeoExes)
-            {
-                DeleteRegistryValue(RegistryHive.LocalMachine,
-                    @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\" + exe,
-                    "Debugger", log);
-            }
-            foreach (string cls in UninstallClassKeys)
-            {
-                DeleteRegistryKey(RegistryHive.CurrentUser, "Software\\Classes\\" + cls, log);
-            }
-            foreach (string branch in UninstallRegistryBranches)
-            {
-                DeleteRegistryKey(RegistryHive.LocalMachine, branch, log);
-                DeleteRegistryKey(RegistryHive.CurrentUser, branch, log);
-            }
-            CleanAutodeskEnvVars(log);
-
-            if (multiUser)
-            {
-                Log(log, "[多用户清理] ...");
-                notes.Add(CleanOtherUserProfiles(log));
-            }
-
-            FlushInstallerServices(log);
+            List<string> notes = RunDeepClean(true, multiUser, log);
 
             var sb = new StringBuilder();
             sb.AppendLine("深度清理完成（未卸载任何产品）。");
@@ -308,6 +233,34 @@ namespace AutoFix
                 catch { }
             }
             if (env == 0) { sb.AppendLine("   无"); }
+
+            // 系统 PATH 中的 Autodesk 条目
+            try
+            {
+                using (RegistryKey k = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                using (RegistryKey e = k.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", false))
+                {
+                    if (e != null)
+                    {
+                        object raw = e.GetValue("Path", null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                        if (raw != null)
+                        {
+                            foreach (string part in raw.ToString().Split(';'))
+                            {
+                                if (part.Length > 0
+                                    && (part.IndexOf("Autodesk", StringComparison.OrdinalIgnoreCase) >= 0
+                                     || part.IndexOf("AdODIS", StringComparison.OrdinalIgnoreCase) >= 0))
+                                {
+                                    sb.AppendLine("   · [系统 PATH] " + part);
+                                    env++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
             total += env;
             Log(log, "审计 9/17 环境变量：" + env);
 
@@ -823,7 +776,8 @@ namespace AutoFix
             foreach (string line in output.Split('\n'))
             {
                 string t = line.Trim();
-                if (t.Length == 0)
+                // 只处理 CSV 数据行；错误信息等非引号开头的行跳过
+                if (t.Length == 0 || !t.StartsWith("\""))
                 {
                     continue;
                 }
@@ -836,16 +790,45 @@ namespace AutoFix
             return list;
         }
 
+        /// <summary>取 CSV 行的第一个字段（正确处理 \"\" 转义）。</summary>
+        private static string FirstCsvField(string line)
+        {
+            if (string.IsNullOrEmpty(line))
+            {
+                return "";
+            }
+            string s = line.TrimStart();
+            if (s.Length == 0 || s[0] != '"')
+            {
+                int comma = s.IndexOf(',');
+                return comma < 0 ? s.Trim() : s.Substring(0, comma).Trim();
+            }
+
+            var sb = new StringBuilder();
+            for (int i = 1; i < s.Length; i++)
+            {
+                if (s[i] == '"')
+                {
+                    // 连续两个引号表示转义引号
+                    if (i + 1 < s.Length && s[i + 1] == '"')
+                    {
+                        sb.Append('"');
+                        i++;
+                        continue;
+                    }
+                    break;   // 字段结束
+                }
+                sb.Append(s[i]);
+            }
+            return sb.ToString();
+        }
+
         private static int RemoveAutodeskScheduledTasks(Action<string> log)
         {
             int n = 0;
             foreach (string raw in AutodeskScheduledTasks())
             {
-                // CSV 第一列是任务名（含引号）
-                string name = raw;
-                int c = raw.IndexOf(',');
-                if (c > 0) { name = raw.Substring(0, c); }
-                name = name.Trim().Trim('"');
+                string name = FirstCsvField(raw);
                 if (name.Length == 0)
                 {
                     continue;
@@ -873,6 +856,17 @@ namespace AutoFix
                 {
                     int i = t.IndexOf(':');
                     current = i >= 0 ? t.Substring(i + 1).Trim() : null;
+
+                    // 规则名本身可能就含 Autodesk（常见情况）
+                    if (current != null
+                        && (current.IndexOf("Autodesk", StringComparison.OrdinalIgnoreCase) >= 0
+                         || current.IndexOf("Adsk", StringComparison.OrdinalIgnoreCase) >= 0))
+                    {
+                        if (!list.Contains(current))
+                        {
+                            list.Add(current);
+                        }
+                    }
                 }
                 else if (current != null && t.Length > 0
                       && (t.IndexOf("Autodesk", StringComparison.OrdinalIgnoreCase) >= 0
@@ -1248,4 +1242,3 @@ namespace AutoFix
         }
     }
 }
-

@@ -473,15 +473,6 @@ namespace AutoFix
             });
             ext.Items.Add(new FixItem
             {
-                Name = "创建系统还原点",
-                Desc = "在执行高危修复前创建系统还原点，便于回退。",
-                Warn = "  · 调用系统还原接口创建一个还原点\r\n" +
-                       "  · 需要系统盘已开启「系统保护」，否则会失败\r\n" +
-                       "  · 创建过程可能需要数十秒",
-                Run = RepairService.CreateRestorePoint
-            });
-            ext.Items.Add(new FixItem
-            {
                 Name = "CAD版本降级",
                 Desc = "把高版本 CAD 文件降级为低版本，供旧版 AutoCAD 打开。使用本机已安装的 ODA File Converter。",
                 NeedsFile = true,
@@ -910,6 +901,13 @@ namespace AutoFix
             _gridHost.ResumeLayout();
             _gridCols = -1;
             LayoutGrid();
+
+            // 若正在执行任务，新分类的按钮也要保持禁用，
+            // 避免看起来可用（实际点击会被 _busy 拦住）造成误导。
+            if (_busy)
+            {
+                SetButtonsEnabled(false);
+            }
 
             _hint.Text = "";
             UpdateStatus();

@@ -171,18 +171,25 @@ namespace AutoFix
             Log(log, "[6/10] 检查 ProductInformation.pit ...");
             try
             {
-                string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                string pit = Path.Combine(local, "Autodesk", "Web Services", "ProductInformation.pit");
-                if (File.Exists(pit))
+                var found = new List<string>();
+                foreach (string pit in PitPaths())
                 {
-                    long size = 0;
-                    try { size = new FileInfo(pit).Length; } catch { }
+                    if (File.Exists(pit))
+                    {
+                        long size = 0;
+                        try { size = new FileInfo(pit).Length; } catch { }
+                        found.Add(pit + "（" + size + " 字节）");
+                    }
+                }
+                if (found.Count > 0)
+                {
                     Add("ProductInformation.pit", "异常",
-                        "存在（" + size + " 字节），可能已损坏，建议删除后由安装程序重建", true);
+                        "存在 " + found.Count + " 个，可能已损坏，建议删除后由安装程序重建：\r\n  · "
+                        + string.Join("\r\n  · ", found.ToArray()), true);
                 }
                 else
                 {
-                    Add("ProductInformation.pit", "正常", "不存在（安装时会自动重建）", false);
+                    Add("ProductInformation.pit", "正常", "新老路径均不存在（安装时会自动重建）", false);
                 }
             }
             catch (Exception ex) { Add("ProductInformation.pit", "提示", "无法检查：" + ex.Message, false); }
@@ -364,4 +371,3 @@ namespace AutoFix
         }
     }
 }
-

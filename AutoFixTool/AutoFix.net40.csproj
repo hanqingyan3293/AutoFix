@@ -41,6 +41,7 @@
     <Compile Include="RepairService.Workbench.cs" />
     <Compile Include="TextConfirmForm.cs" />
     <Compile Include="AuditForm.cs" />
+    <Compile Include="RepairService.Cleanup.cs" />
   </ItemGroup>
 
   <ItemGroup>

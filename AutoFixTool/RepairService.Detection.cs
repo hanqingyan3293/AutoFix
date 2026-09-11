@@ -60,6 +60,23 @@ namespace AutoFix
         private const string AdskLicensingDir2 = @"C:\ProgramData\Autodesk\AdskLicensingService";
         private const string PitFile = @"C:\ProgramData\Autodesk\Adlm\ProductInformation.pit";
 
+        /// <summary>ProductInformation.pit 的全部已知路径（新旧两代）。</summary>
+        internal static string[] PitPaths()
+        {
+            var list = new List<string>();
+            try
+            {
+                string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                if (!string.IsNullOrEmpty(local))
+                {
+                    list.Add(Path.Combine(local, "Autodesk", "Web Services", "ProductInformation.pit"));
+                }
+            }
+            catch { }
+            list.Add(PitFile);
+            return list.ToArray();
+        }
+
         /// <summary>只读检测：系统环境 + Autodesk 组件状态 + 已安装产品。不修改任何设置。</summary>
         public static EnvironmentReport Detect(Action<string> log)
         {
@@ -235,17 +252,23 @@ namespace AutoFix
                 dirCount == 0 ? null : "错误1603 / 270 / 1 会删除这两个目录",
                 dirCount == 0 ? CheckLevel.Info : CheckLevel.Warn);
 
-            bool pit = false;
-            try { pit = File.Exists(PitFile); } catch { }
-            if (!pit)
+            // 新旧两代路径都检查
+            foreach (string pitPath in PitPaths())
             {
-                Add(r, g, "ProductInformation.pit", "不存在", null, CheckLevel.Info);
-            }
-            else
-            {
+                string label;
+                try { label = Path.GetFileName(Path.GetDirectoryName(pitPath)) + "\\" + Path.GetFileName(pitPath); }
+                catch { label = pitPath; }
+
+                bool exists = false;
+                try { exists = File.Exists(pitPath); } catch { }
+                if (!exists)
+                {
+                    Add(r, g, "ProductInformation.pit（" + label + "）", "不存在", null, CheckLevel.Info);
+                    continue;
+                }
                 bool canDel = false;
-                try { canDel = HasDeleteLikeAccess(PitFile); } catch { }
-                Add(r, g, "ProductInformation.pit",
+                try { canDel = HasDeleteLikeAccess(pitPath); } catch { }
+                Add(r, g, "ProductInformation.pit（" + label + "）",
                     canDel ? "存在，权限正常" : "存在，当前用户缺少删除级权限",
                     canDel ? null : "错误1603 会为其补足权限",
                     canDel ? CheckLevel.Ok : CheckLevel.Warn);

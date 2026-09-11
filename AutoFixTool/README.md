@@ -181,6 +181,26 @@ dotnet build AutoFixTool/AutoFix.csproj -c Release
 | 多用户清理 | 遍历 ProfileList，加载其他用户的 NTUSER.DAT 清除 Autodesk 注册表，并清理其 AppData（已登录用户跳过） |
 | 服务刷新 | 重启 msiserver，清除内存中的重启挂起状态 |
 
+### 深度清理的完整阶段顺序
+
+产品卸载与「仅深度清理」共用同一条流程（`RunDeepClean`），对齐参考项目：
+
+    B  结束 23 个进程、停止 5 个服务
+    C2 强制清除多轮卸载后仍残留的注册表项
+    幽灵项 删除 Installer\Products 下 ProductName 含 Autodesk 的记录（删除前导出 .reg 备份）
+    D  清理共享组件目录（Common Files 下的 Autodesk Shared / FlexNet Publisher）
+    E  删除 7 个残留目录
+    E3 重试被占用的目录；仍失败则登记 RunOnce
+    E2 清理桌面 / 开始菜单快捷方式
+    F  清理 Autodesk 缓存目录
+    F2 清理安装包与下载缓存（C:\Autodesk、Uninstallers、ODIS metadata、下载目录）
+    G  删除服务注册、计划任务、防火墙规则
+    H  清理 IFEO 劫持项、HKCU 类键、注册表分支、相关环境变量
+    PATH 从系统 PATH 移除 Autodesk / AdODIS 条目（修改前导出备份）
+    多用户 处理其他用户配置文件（可选）
+    刷新 重启 msiserver
+    I   移除 Genuine Service（必须最后，它会自我恢复）
+
 ## 清理后校验
 
 对应工作台的 #5（17 项）与 #10（10 项诊断）。
@@ -194,7 +214,7 @@ dotnet build AutoFixTool/AutoFix.csproj -c Release
 | 3 | 组件版本 | 读取 Autodesk Access 与 ODIS Installer 的文件版本 |
 | 4 | AdskAccessServiceHost | 已安装但未运行即为异常 |
 | 5 | ODIS 基础设施 | Installer.exe 与数据目录缺失时，若本机仍有产品则判为异常，否则视为干净系统 |
-| 6 | ProductInformation.pit | 存在即提示可能损坏（安装时会重建） |
+| 6 | ProductInformation.pit | **新老两代路径都检查**，存在任一即提示可能损坏（安装时会重建） |
 | 7 | TEMP 路径 | 必须位于 %LOCALAPPDATA%\Temp，否则安装可能失败 |
 | 8 | VC++ 运行库 | 检查 2015-2022 x64 是否存在 |
 | 9 | 事件日志 | 近 7 天 Application 日志中 Autodesk 相关错误条数 |
@@ -276,7 +296,7 @@ change --prod_key <产品密钥> --prod_ver <2024.0.0.F> --lic_method NETWORK|ST
 | 系统环境 | 操作系统、系统架构（含本程序位数）、当前权限、.NET Framework 版本、系统时间（含年份合理性）、各固定磁盘剩余空间 |
 | 网络与安全 | hosts 文件（Autodesk 相关重定向）、已注册的安全软件 |
 | 目录与路径 | 临时目录、我的文档（是否指向失效磁盘）、C:\Windows\Installer 是否存在 |
-| Autodesk 组件 | AdskLicensingService 状态、AdskLicensing 目录、ProductInformation.pit（含权限）、Genuine Service 目录、FLEXnet 许可数据、AdODIS、AdskIdentityManager、Autodesk Access |
+| Autodesk 组件 | AdskLicensingService 状态、AdskLicensing 目录、ProductInformation.pit（**新旧两代路径**，含权限）、Genuine Service 目录、FLEXnet 许可数据、AdODIS、AdskIdentityManager、Autodesk Access |
 | Windows Installer | msiserver 状态、挂起的重启标记、IFEO 调试器劫持项数量 |
 | 运行库 | 已安装的 VC++ 运行库清单（检查是否含 2015-2022 系列） |
 

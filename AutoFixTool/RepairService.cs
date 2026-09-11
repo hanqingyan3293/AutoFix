@@ -67,11 +67,16 @@ namespace AutoFix
                 DeleteDirectory(@"C:\Program Files (x86)\Common Files\Autodesk Shared\AdskLicensing", log);
                 DeleteDirectory(@"C:\ProgramData\Autodesk\AdskLicensingService", log);
 
-                const string pit = @"C:\ProgramData\Autodesk\Adlm\ProductInformation.pit";
-                if (File.Exists(pit) && !HasDeleteLikeAccess(pit))
+                // ProductInformation.pit 有两代路径，都需覆盖：
+                //   新版：%LOCALAPPDATA%\Autodesk\Web Services\ProductInformation.pit
+                //   旧版：C:\ProgramData\Autodesk\Adlm\ProductInformation.pit
+                foreach (string pit in PitPaths())
                 {
-                    Log(log, "ProductInformation.pit 缺少删除级权限，正在授予完全控制（不删除、不重命名）");
-                    GrantFullControl(pit);
+                    if (File.Exists(pit) && !HasDeleteLikeAccess(pit))
+                    {
+                        Log(log, "缺少删除级权限，正在授予完全控制（不删除、不重命名）：" + pit);
+                        GrantFullControl(pit);
+                    }
                 }
 
                 return "错误1603 已修复。请尝试重新安装！" + (docNote ?? "");
