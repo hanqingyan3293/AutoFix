@@ -31,11 +31,19 @@
     <Compile Include="RepairService.DryRun.cs" />
     <Compile Include="RepairService.Oda.cs" />
     <Compile Include="ChoiceForm.cs" />
+    <Compile Include="RepairService.License.cs" />
+    <Compile Include="LicenseForm.cs" />
+    <Compile Include="RepairService.Uninstall.cs" />
+    <Compile Include="ProductUninstallForm.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Management" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets/AutodeskProducts.txt" />
   </ItemGroup>
 
   <ItemGroup>

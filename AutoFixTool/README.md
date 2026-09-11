@@ -45,7 +45,7 @@ dotnet build AutoFixTool/AutoFix.csproj -c Release
 按默认窗口宽度（980）计算约为 4 列；窗口拉到 1040 左右为 5 列，1200 左右为 6 列。
 （本程序最小窗口宽度为 880，在最小宽度下仍为 4 列。）
 
-## 功能清单（51 项）
+## 功能清单（57 项）
 
 **环境检测**（只读）
 
@@ -122,11 +122,69 @@ dotnet build AutoFixTool/AutoFix.csproj -c Release
 | --- | --- |
 | 扫描残留 | 只读扫描六类 Autodesk 残留，结果页支持按类型筛选与导出 |
 
+**产品卸载清理**（1 项）
+
+| 功能 | 处理内容 |
+| --- | --- |
+| 卸载已安装产品 | 扫描已安装的 Autodesk 产品，勾选后按阶段卸载，可选深度清理残留 |
+
+**许可管理**（5 项）
+
+| 功能 | 处理内容 |
+| --- | --- |
+| 切换为网络许可 | 设为网络许可，需填写许可服务器与服务器类型 |
+| 切换为单机许可 | 设为单机（序列号）许可 |
+| 切换为用户许可 | 设为命名用户许可 |
+| 重置许可 | 清除许可配置，并重置本机登录状态与身份服务数据库 |
+| 查询产品密钥 | 按年份浏览产品名称与产品密钥对照表（2020–2027，1073 条），只读 |
+
 **磁盘清理**（1 项）
 
 | 功能 | 处理内容 |
 | --- | --- |
 | 卷缓存清理 | 调用 Windows 自带磁盘清理引擎：先只读扫描各卷缓存占用，勾选后清理 |
+
+## 产品卸载清理
+
+点「产品卸载清理 → 卸载已安装产品」会先只读扫描，列出检测到的 Autodesk 产品（含版本），
+勾选后弹出确认框，随后按阶段执行：
+
+| 阶段 | 内容 |
+| --- | --- |
+| A | 创建系统还原点（默认开启；系统保护未开启时会失败但继续） |
+| B | 结束 23 个 Autodesk 相关进程、停止 5 个相关服务 |
+| C | 逐项卸载（优先 `msiexec /x {GUID} /qn`，回退到 UninstallString），最多重试 3 轮 |
+| E | 深度清理：删除 7 个残留目录 |
+| E2 | 清理桌面 / 开始菜单中的 Autodesk 快捷方式 |
+| F | 清理 Autodesk 缓存目录 |
+| G/H | 删除服务注册、清理 IFEO 调试器劫持项、HKCU 命名类键、注册表分支 |
+| 复查 | 重新扫描并报告仍检测到的产品数量 |
+
+**深度清理默认关闭**。开启后才会执行 E 之后的阶段——那些会删除目录与注册表分支、不可撤销。
+
+阶段设计与数据清单（进程名、服务名、类键、IFEO 目标、目录、注册表分支）来自
+参考项目 autodesk-complete-uninstaller（MIT），实现为原生 C#，**未包含或调用该项目的批处理文件**。
+
+## 许可管理
+
+封装 Autodesk **官方的** `AdskLicensingInstHelper.exe`，提供图形界面：
+
+```
+change --prod_key <产品密钥> --prod_ver <2024.0.0.F> --lic_method NETWORK|STANDALONE|USER
+       [--lic_server_type SINGLE|REDUNDANT|DISTRIBUTED --lic_servers <服务器>]
+重置：--lic_method "" --lic_server_type "" --lic_servers ""
+```
+
+许可方式切换（网络 / 单机 / 用户 / 重置）是 Autodesk 官方文档记载的标准管理操作，
+本工具只为其提供界面，**不涉及任何授权绕过**。适用于 2020 及以后版本。
+
+执行时的附加步骤：
+
+- 结束 `AdSSO.exe`，避免其占用许可状态
+- 切换到网络许可前，清除 `HKCU\Software\FLEXlm License Manager`
+- 重置许可时，额外清除 `LoginState.xml` 并重命名 `idservices.db`（先结束 `AdskIdentityManager`）
+
+界面提供命令预览与「复制命令」，可在执行前核对生成的完整命令行。
 
 ## 预演模式
 
@@ -238,6 +296,18 @@ dotnet build AutoFixTool/AutoFix.csproj -c Release
 - 首次运行有 SmartScreen 提示（未签名的新程序），点「更多信息 → 仍要运行」。
 - 部分杀软可能告警（本类工具会停服务、改注册表权限）。
 - 建议先在测试机验证再用于生产环境。
+
+## 第三方参考
+
+本项目参考了两个 MIT 许可的开源项目，**均只借鉴其数据与流程设计，未复制代码实现**：
+
+| 项目 | 许可 | 借鉴内容 |
+| --- | --- | --- |
+| [autodesk-complete-uninstaller](https://github.com/bequiet11/autodesk-complete-uninstaller) | MIT | 卸载的阶段划分、进程/服务/类键/IFEO/目录/注册表清单 |
+| [ExtrabbitCode.AdskLicensingModifier](https://github.com/ExtrabbitCode/AdskLicensingModifier) | MIT | AdskLicensingInstHelper 的命令行用法、产品密钥数据表 |
+
+其中 `Assets/AutodeskProducts.txt`（产品名称与密钥对照表，1073 条）来自第二个项目，
+按 MIT 要求附版权与许可说明，见 [Assets/README-来源与许可.txt](Assets/README-来源与许可.txt)。
 
 ## 实现说明
 

@@ -18,4 +18,8 @@
     <Reference Include="System.Management" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Assets/AutodeskProducts.txt" />
+  </ItemGroup>
+
 </Project>

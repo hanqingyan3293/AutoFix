@@ -26,6 +26,10 @@ namespace AutoFix
             public bool IsResidueScan;                            // 残留扫描后弹出结果窗口
             public string[] Choices;                              // 执行前让用户选择一项
             public string ChoicePrompt;
+            public bool IsLicense;                                // 打开许可配置窗口
+            public LicenseMethod LicenseMethod = LicenseMethod.Standalone;
+            public bool IsLicenseLookup;                          // 只读产品密钥查询
+            public bool IsProductUninstall;                       // 打开产品卸载窗口
         }
 
         private sealed class Category
@@ -543,12 +547,68 @@ namespace AutoFix
                 IsResidueScan = true
             });
 
+            var uninst = new Category
+            {
+                Name = "产品卸载清理",
+                Intro = "扫描并卸载已安装的 Autodesk 产品。按「还原点 → 停进程/服务 → 多轮卸载 → 深度清理 → 复查」执行，"
+                      + "适用于常规卸载失败、卸载后残留导致无法重装的情况。"
+            };
+            uninst.Items.Add(new FixItem
+            {
+                Name = "卸载已安装产品",
+                Desc = "扫描已安装的 Autodesk 产品，勾选后按阶段卸载，可选深度清理残留。",
+                IsProductUninstall = true
+            });
+
+            var lic = new Category
+            {
+                Name = "许可管理",
+                Intro = "封装 Autodesk 官方的 AdskLicensingInstHelper.exe，在图形界面中切换许可方式。"
+                      + "适用于 2020 及以后版本；需已安装 Autodesk Licensing 组件。"
+            };
+            lic.Items.Add(new FixItem
+            {
+                Name = "切换为网络许可",
+                Desc = "把指定产品设为网络许可，需填写许可服务器。",
+                IsLicense = true,
+                LicenseMethod = LicenseMethod.Network
+            });
+            lic.Items.Add(new FixItem
+            {
+                Name = "切换为单机许可",
+                Desc = "把指定产品设为单机（序列号）许可。",
+                IsLicense = true,
+                LicenseMethod = LicenseMethod.Standalone
+            });
+            lic.Items.Add(new FixItem
+            {
+                Name = "切换为用户许可",
+                Desc = "把指定产品设为命名用户许可。",
+                IsLicense = true,
+                LicenseMethod = LicenseMethod.User
+            });
+            lic.Items.Add(new FixItem
+            {
+                Name = "重置许可",
+                Desc = "清除指定产品的许可配置，并重置本机登录状态与身份服务数据库。",
+                IsLicense = true,
+                LicenseMethod = LicenseMethod.Reset
+            });
+            lic.Items.Add(new FixItem
+            {
+                Name = "查询产品密钥",
+                Desc = "按年份浏览 Autodesk 产品名称与产品密钥对照表（2020–2027，共 1073 条）。只读。",
+                IsLicenseLookup = true
+            });
+
             _cats.Add(detect);
             _cats.Add(install);
             _cats.Add(perm);
             _cats.Add(comp);
             _cats.Add(ext);
             _cats.Add(residue);
+            _cats.Add(uninst);
+            _cats.Add(lic);
             _cats.Add(disk);
         }
 
@@ -865,6 +925,30 @@ namespace AutoFix
             if (item.IsResidueScan)
             {
                 RunResidueScan();
+                return;
+            }
+
+            if (item.IsLicense || item.IsLicenseLookup)
+            {
+                using (var f = new LicenseForm(
+                    item.IsLicenseLookup ? LicenseMethod.Standalone : item.LicenseMethod,
+                    item.IsLicenseLookup))
+                {
+                    f.ShowDialog(this);
+                }
+                UpdateStatus();
+                return;
+            }
+
+            if (item.IsProductUninstall)
+            {
+                RunProductUninstall();
+                return;
+            }
+
+            if (item.IsProductUninstall)
+            {
+                RunProductUninstall();
                 return;
             }
 
@@ -1228,6 +1312,122 @@ namespace AutoFix
                         using (var f = new ResidueForm(found))
                         {
                             f.ShowDialog(this);
+                        }
+                    }));
+                }
+                catch { }
+            });
+            t.IsBackground = true;
+            t.Start();
+        }
+
+        /// <summary>扫描已安装产品 → 勾选确认 → 按阶段卸载。</summary>
+        private void RunProductUninstall()
+        {
+            _busy = true;
+            SetButtonsEnabled(false);
+            _status.Text = "正在扫描已安装产品...";
+            AppendLog("—— 扫描已安装产品 ——");
+
+            var t = new Thread(() =>
+            {
+                List<ProductItem> found = null;
+                string error = null;
+                try
+                {
+                    found = RepairService.ScanInstalledProducts();
+                }
+                catch (Exception ex)
+                {
+                    error = ex.Message;
+                }
+
+                try
+                {
+                    BeginInvoke((Action)(() =>
+                    {
+                        if (found == null)
+                        {
+                            _busy = false;
+                            SetButtonsEnabled(true);
+                            UpdateStatus();
+                            MessageBox.Show(this, "扫描失败：" + error, "执行失败",
+                                MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                            return;
+                        }
+
+                        AppendLog("扫描完成，检测到 " + found.Count + " 个 Autodesk 产品");
+                        foreach (ProductItem p in found)
+                        {
+                            AppendLog("  · " + p.Name + (string.IsNullOrEmpty(p.Version) ? "" : "  " + p.Version));
+                        }
+
+                        using (var f = new ProductUninstallForm(found))
+                        {
+                            f.ShowDialog(this);
+                            if (!f.Confirmed || f.SelectedProducts == null)
+                            {
+                                _busy = false;
+                                SetButtonsEnabled(true);
+                                UpdateStatus();
+                                AppendLog("已取消产品卸载");
+                                return;
+                            }
+
+                            var sel = f.SelectedProducts;
+                            bool rp = f.CreateRestorePoint;
+                            bool deep = f.DeepClean;
+
+                            _status.Text = RepairService.DryRun ? "预演中，请稍候..." : "正在卸载，请稍候...";
+                            AppendLog("—— 开始卸载 " + sel.Count + " 个产品 ——");
+                            if (RepairService.DryRun)
+                            {
+                                RepairService.ResetDryRunCounter();
+                            }
+
+                            var t2 = new Thread(() =>
+                            {
+                                string result;
+                                bool failed;
+                                try
+                                {
+                                    result = RepairService.UninstallProducts(sel, rp, deep, AppendLog);
+                                    failed = result.Contains("失败");
+                                }
+                                catch (Exception ex)
+                                {
+                                    result = "卸载时发生异常：" + ex.Message;
+                                    failed = true;
+                                }
+
+                                try
+                                {
+                                    BeginInvoke((Action)(() =>
+                                    {
+                                        _busy = false;
+                                        SetButtonsEnabled(true);
+                                        UpdateStatus();
+                                        AppendLog("—— 卸载结束 ——");
+
+                                        if (RepairService.DryRun)
+                                        {
+                                            string head = "[预演模式] 共 " + RepairService.DryRunActionCount
+                                                        + " 项操作，均未实际执行。" + Environment.NewLine
+                                                        + "详细清单见下方日志。" + Environment.NewLine + Environment.NewLine;
+                                            MessageBox.Show(this, head + result, "预演结果",
+                                                MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                        }
+                                        else
+                                        {
+                                            MessageBox.Show(this, result, failed ? "执行失败" : "操作完成",
+                                                MessageBoxButtons.OK, failed ? MessageBoxIcon.Hand : MessageBoxIcon.Information);
+                                        }
+                                    }));
+                                }
+                                catch { }
+                            });
+                            t2.IsBackground = true;
+                            t2.Start();
                         }
                     }));
                 }
