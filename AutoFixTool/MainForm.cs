@@ -1494,9 +1494,39 @@ namespace AutoFix
                             bool deep = f.DeepClean;
                             bool multi = f.MultiUser;
                             bool cleanInst = f.CleanInstallers;
+                            bool cleanDtc = f.CleanDesktopConnector;
                             if (forceDeepClean)
                             {
                                 deep = true;
+                            }
+
+                            // 全量清理是最具破坏性的操作：要求手动输入 YES
+                            if (forceDeepClean && !RepairService.DryRun)
+                            {
+                                string msg = "这是本工具最具破坏性的操作。" + Environment.NewLine + Environment.NewLine
+                                    + "将卸载选中的 " + sel.Count + " 个 Autodesk 产品，并执行完整深度清理："
+                                    + Environment.NewLine
+                                    + "  · 调用共享组件官方卸载程序、删除残留目录与注册表" + Environment.NewLine
+                                    + "  · 删除服务注册、计划任务、防火墙规则、环境变量" + Environment.NewLine
+                                    + "  · 移除 Genuine Service" + Environment.NewLine
+                                    + (cleanInst ? "  · 清理安装包与下载缓存" + Environment.NewLine : "")
+                                    + (cleanDtc ? "  · 删除 Desktop Connector 工作区（含项目文件）" + Environment.NewLine : "")
+                                    + Environment.NewLine
+                                    + "共享组件（如 FlexNet Publisher）会在下一步单独列出，由你逐项决定。"
+                                    + Environment.NewLine + Environment.NewLine
+                                    + "此操作不可撤销，建议先做好备份或还原点。";
+
+                                using (var cf = new TextConfirmForm("全量卸载并深度清理", msg, "YES"))
+                                {
+                                    if (cf.ShowDialog(this) != DialogResult.OK)
+                                    {
+                                        _busy = false;
+                                        SetButtonsEnabled(true);
+                                        UpdateStatus();
+                                        AppendLog("已取消全量清理（未输入 YES 确认）");
+                                        return;
+                                    }
+                                }
                             }
 
                             // 深度清理会删除共用组件：逐项确认，默认全部保留
@@ -1523,7 +1553,7 @@ namespace AutoFix
                                 bool failed;
                                 try
                                 {
-                                    result = RepairService.UninstallProducts(sel, rp, deep, multi, cleanInst, risky, AppendLog);
+                                    result = RepairService.UninstallProducts(sel, rp, deep, multi, cleanInst, cleanDtc, risky, AppendLog);
                                     failed = result.Contains("失败");
                                 }
                                 catch (Exception ex)

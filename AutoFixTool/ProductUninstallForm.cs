@@ -22,6 +22,7 @@ namespace AutoFix
         private CheckBox _deepClean;
         private CheckBox _multiUser;
         private CheckBox _installers;
+        private CheckBox _desktopConnector;
         private Label _summary;
         private Button _run;
 
@@ -30,6 +31,7 @@ namespace AutoFix
         public bool DeepClean { get; private set; }
         public bool MultiUser { get; private set; }
         public bool CleanInstallers { get; private set; }
+        public bool CleanDesktopConnector { get; private set; }
         public bool Confirmed { get; private set; }
 
         public ProductUninstallForm(List<ProductItem> products)
@@ -89,7 +91,7 @@ namespace AutoFix
             footer.Controls.Add(buttons);
 
             // ---- 选项区 ----
-            var options = new Panel { Dock = DockStyle.Top, Height = 110, Padding = new Padding(16, 8, 16, 0) };
+            var options = new Panel { Dock = DockStyle.Top, Height = 134, Padding = new Padding(16, 8, 16, 0) };
             _restorePoint = new CheckBox
             {
                 Text = "卸载前创建系统还原点（建议开启，失败则继续）",
@@ -119,10 +121,19 @@ namespace AutoFix
                 Width = 620,
                 Cursor = Cursors.Hand
             };
+            _desktopConnector = new CheckBox
+            {
+                Text = "同时删除 Desktop Connector 工作区（%USERPROFILE%\\DC 与 \\ACCDocs，含项目文件）",
+                Location = new Point(16, 106),
+                Width = 660,
+                ForeColor = Color.FromArgb(186, 96, 12),
+                Cursor = Cursors.Hand
+            };
             options.Controls.Add(_restorePoint);
             options.Controls.Add(_deepClean);
             options.Controls.Add(_multiUser);
             options.Controls.Add(_installers);
+            options.Controls.Add(_desktopConnector);
 
             var toggles = new Panel { Dock = DockStyle.Right, Width = 200, Padding = new Padding(0, 8, 14, 0) };
             var all = MakeButton("全选", 80, false);
@@ -277,6 +288,12 @@ namespace AutoFix
             {
                 sb.AppendLine("  · 清理安装包与下载缓存（含「下载」目录中的 Autodesk 安装包）");
             }
+            if (_desktopConnector.Checked)
+            {
+                sb.AppendLine();
+                sb.AppendLine("⚠ 将删除 Desktop Connector 工作区，其中含 ACC / BIM 360 项目文件。");
+                sb.AppendLine("   尚未完整上传到云端的文件将永久丢失。");
+            }
             sb.AppendLine();
             sb.Append("确认开始卸载？");
 
@@ -292,6 +309,7 @@ namespace AutoFix
             DeepClean = _deepClean.Checked;
             MultiUser = _multiUser.Checked;
             CleanInstallers = _installers.Checked;
+            CleanDesktopConnector = _desktopConnector.Checked;
             Confirmed = true;
             DialogResult = DialogResult.OK;
             Close();

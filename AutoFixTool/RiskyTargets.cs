@@ -46,7 +46,7 @@ namespace AutoFix
                 {
                     Path = @"C:\Program Files (x86)\Common Files\Autodesk Shared",
                     Title = "Autodesk 共享组件（32 位）",
-                    Reason = "同上，供 32 位 Autodesk 产品使用。若仍有未卸载的 32 位产品，删除会影响它们。"
+                    Reason = "同上，供 32 位 Autodesk 产品使用。选择「保留」将同时跳过其中的 AdskLicensing 卸载，保持该目录完整。"
                 }
             };
 
@@ -82,10 +82,25 @@ namespace AutoFix
         /// <summary>判断某个路径是否被用户选择保留。</summary>
         private static bool IsKeptByUser(string path, List<RiskyTarget> decisions)
         {
-            if (decisions == null || string.IsNullOrEmpty(path))
+            if (string.IsNullOrEmpty(path))
             {
                 return false;
             }
+
+            // 未提供决策时按安全默认处理：保留所有争议项（而不是删除）。
+            if (decisions == null)
+            {
+                foreach (RiskyTarget t in GetRiskyTargets())
+                {
+                    if (string.Equals(t.Path.TrimEnd('\\', '/'), path.TrimEnd('\\', '/'),
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             foreach (RiskyTarget t in decisions)
             {
                 if (t.Keep
@@ -99,4 +114,3 @@ namespace AutoFix
         }
     }
 }
-

@@ -190,6 +190,86 @@ namespace AutoFix
         // ==================== 系统 PATH 清理 ====================
 
         /// <summary>
+        /// 选择性清理 PendingFileRenameOperations：只移除与 Autodesk / AdODIS 相关的条目，
+        /// 其他条目原样保留（对应参考项目深度清理阶段的处理方式）。
+        /// </summary>
+        internal static int CleanPendingRenameAutodeskEntries(Action<string> log)
+        {
+            const string subKey = @"SYSTEM\CurrentControlSet\Control\Session Manager";
+            try
+            {
+                using (RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                using (RegistryKey k = baseKey.OpenSubKey(subKey, true))
+                {
+                    if (k == null)
+                    {
+                        return 0;
+                    }
+
+                    string[] vals = null;
+                    try { vals = k.GetValue("PendingFileRenameOperations") as string[]; } catch { }
+                    if (vals == null || vals.Length == 0)
+                    {
+                        return 0;
+                    }
+
+                    // REG_MULTI_SZ 成对出现：源路径、目标路径
+                    var kept = new List<string>();
+                    int removed = 0;
+                    for (int i = 0; i + 1 < vals.Length; i += 2)
+                    {
+                        string src = vals[i] ?? "";
+                        string dst = vals[i + 1] ?? "";
+                        bool hit = src.IndexOf("Autodesk", StringComparison.OrdinalIgnoreCase) >= 0
+                                || src.IndexOf("AdODIS", StringComparison.OrdinalIgnoreCase) >= 0
+                                || src.IndexOf("AdskLicensing", StringComparison.OrdinalIgnoreCase) >= 0
+                                || dst.IndexOf("Autodesk", StringComparison.OrdinalIgnoreCase) >= 0
+                                || dst.IndexOf("AdODIS", StringComparison.OrdinalIgnoreCase) >= 0
+                                || dst.IndexOf("AdskLicensing", StringComparison.OrdinalIgnoreCase) >= 0;
+                        if (hit)
+                        {
+                            Log(log, "  移除待处理重命名条目：" + src);
+                            removed++;
+                        }
+                        else
+                        {
+                            kept.Add(src);
+                            kept.Add(dst);
+                        }
+                    }
+
+                    if (removed == 0)
+                    {
+                        return 0;
+                    }
+
+                    if (DryRun)
+                    {
+                        DryNote("从 PendingFileRenameOperations 移除 " + removed + " 组 Autodesk 条目（保留其余）", log);
+                        return removed;
+                    }
+
+                    if (kept.Count == 0)
+                    {
+                        k.DeleteValue("PendingFileRenameOperations", false);
+                        Log(log, "  该值仅含 Autodesk 条目，已整体删除");
+                    }
+                    else
+                    {
+                        k.SetValue("PendingFileRenameOperations", kept.ToArray(), RegistryValueKind.MultiString);
+                        Log(log, "  已移除 " + removed + " 组 Autodesk 条目，保留 " + (kept.Count / 2) + " 组其他条目");
+                    }
+                    return removed;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log(log, "清理待处理重命名操作失败：" + ex.Message);
+                return 0;
+            }
+        }
+
+        /// <summary>
         /// 从系统 PATH 中移除指向 Autodesk / AdODIS 的条目。
         /// 修改前导出 Environment 分支备份。类型保持 REG_EXPAND_SZ。
         /// </summary>
@@ -322,7 +402,8 @@ namespace AutoFix
         /// 顺序与参考项目一致：Desktop App → Identity Manager → ODIS → AdskLicensing
         /// → AdskUninstallHelper → 删 .pit 与 Genuine id.dat。
         /// </summary>
-        internal static List<string> RunSharedComponentUninstallers(Action<string> log)
+        internal static List<string> RunSharedComponentUninstallers(
+            List<RiskyTarget> riskyDecisions, Action<string> log)
         {
             var notes = new List<string>();
 
@@ -356,8 +437,17 @@ namespace AutoFix
             }
 
             // 4) AdskLicensing；卸载程序不存在时退回 sc delete
+            // 若用户选择保留 Autodesk Shared，则跳过这一步，避免与其「保留」意愿冲突。
             string adskLic = @"C:\Program Files (x86)\Common Files\Autodesk Shared\AdskLicensing\uninstall.exe";
-            if (File.Exists(adskLic))
+            bool keepAdskShared =
+                IsKeptByUser(@"C:\Program Files (x86)\Common Files\Autodesk Shared", riskyDecisions);
+
+            if (keepAdskShared)
+            {
+                Log(log, "  按你的选择保留 Autodesk Shared，跳过 AdskLicensing 卸载");
+                notes.Add("按你的选择保留了 Autodesk Shared（未卸载 AdskLicensing）");
+            }
+            else if (File.Exists(adskLic))
             {
                 Log(log, "  卸载 AdskLicensing ...");
                 RunInstallerQuiet(adskLic, "--mode unattended", log);
@@ -549,7 +639,7 @@ namespace AutoFix
 
             // --- Phase D ---
             Log(log, "[阶段 D] 调用共享组件的官方卸载程序 ...");
-            notes.AddRange(RunSharedComponentUninstallers(log));
+            notes.AddRange(RunSharedComponentUninstallers(riskyDecisions, log));
 
             // --- Phase E ---
             Log(log, "[阶段 E] 删除残留目录 ...");
@@ -643,6 +733,14 @@ namespace AutoFix
             Log(log, "[PATH] 清理系统 PATH 中的 Autodesk 条目 ...");
             int pe = CleanSystemPath(log);
             notes.Add("清理系统 PATH 条目 " + pe + " 个");
+
+            // --- 待处理重命名（只删 Autodesk 条目，保留其他）---
+            Log(log, "[PFRO] 清理待处理重命名中的 Autodesk 条目 ...");
+            int pf = CleanPendingRenameAutodeskEntries(log);
+            if (pf > 0)
+            {
+                notes.Add("清理待处理重命名条目 " + pf + " 组");
+            }
 
             // --- 多用户 ---
             if (multiUser)

@@ -91,7 +91,12 @@ namespace AutoFix
                 FlatStyle = FlatStyle.Flat
             };
             _filter.Items.Add("全部类型");
-            foreach (string t in new[] { "注册表", "文件目录", "服务", "进程", "卸载项", "快捷方式" })
+            foreach (string t in new[]
+            {
+                "卸载项", "进程", "服务", "文件目录", "数据目录", "全盘搜索",
+                "注册表", "COM 注册", "HKCU 类注册", "外壳扩展", "Installer 幽灵项",
+                "快捷方式", "计划任务", "环境变量", "IFEO 劫持", "待处理重命名", "hosts 条目"
+            })
             {
                 _filter.Items.Add(t);
             }
@@ -264,4 +269,3 @@ namespace AutoFix
         }
     }
 }
-

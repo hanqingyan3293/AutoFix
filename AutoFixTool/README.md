@@ -126,7 +126,7 @@ dotnet build AutoFixTool/AutoFix.csproj -c Release
 | 4 | 仅深度清理残留 | 不卸载产品，只清残留 |
 | 5 | 完整验证（17 项） | 只读，17 个维度 |
 | 6 | 创建系统还原点 | 高危操作前的回退点 |
-| 7 | 搜索全部残留 | 只读，六类残留 |
+| 7 | 搜索全部残留 | 只读，**15 个维度**（产品/进程/服务/程序目录/数据目录/全盘搜索/注册表/COM/类注册/外壳扩展/幽灵项/快捷方式任务环境变量/IFEO/待处理重命名/hosts） |
 | 8 | 完整系统审计 | 只读预览，列出将被删除的全部内容 |
 | 9 | 清理 Desktop Connector 工作区 | 需手输 YES 强确认 |
 | 10 | 错误103诊断修复 | 10 项只读诊断 |
@@ -164,7 +164,7 @@ dotnet build AutoFixTool/AutoFix.csproj -c Release
 | A | 创建系统还原点（默认开启；系统保护未开启时会失败但继续） |
 | B | 结束 23 个 Autodesk 相关进程、停止 5 个相关服务 |
 | C | 逐项卸载（优先 `msiexec /x {GUID} /qn`，回退到 UninstallString），最多重试 3 轮 |
-| E | 深度清理：删除 7 个残留目录 |
+| E | 深度清理：删除 11 个机器级 + 3 个用户级残留目录（共用组件先经逐项确认） |
 | E2 | 清理桌面 / 开始菜单中的 Autodesk 快捷方式 |
 | F | 清理 Autodesk 缓存目录 |
 | G/H | 删除服务注册、清理 IFEO 调试器劫持项、HKCU 命名类键、注册表分支 |
@@ -201,6 +201,7 @@ dotnet build AutoFixTool/AutoFix.csproj -c Release
     G  删除服务注册、计划任务、防火墙规则
     H  清理 IFEO 劫持项、HKCU 类键、注册表分支、相关环境变量
     PATH 从系统 PATH 移除 Autodesk / AdODIS 条目（修改前导出备份）
+    PFRO 从 PendingFileRenameOperations 中只移除 Autodesk 条目，其他条目原样保留
     多用户 处理其他用户配置文件（可选）
     刷新 重启 msiserver
     I   移除 Genuine Service（必须最后，它会自我恢复）

@@ -45,6 +45,7 @@
     <Compile Include="DeepCleanOptionsForm.cs" />
     <Compile Include="RiskyTargets.cs" />
     <Compile Include="RiskyTargetsForm.cs" />
+    <Compile Include="ResidueScan.More.cs" />
   </ItemGroup>
 
   <ItemGroup>

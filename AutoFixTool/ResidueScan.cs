@@ -66,7 +66,12 @@ namespace AutoFix
             return false;
         }
 
-        /// <summary>只读扫描 Autodesk 残留，覆盖注册表 / 文件目录 / 服务 / 进程 / 卸载项 / 快捷方式。</summary>
+        /// <summary>
+        /// 只读扫描 Autodesk 残留，15 个维度（对齐参考项目的残留扫描）：
+        /// 产品 / 进程 / 服务 / 程序目录 / 数据目录 / 全盘搜索 / 注册表分支 /
+        /// COM 注册 / HKCU 类注册 / 外壳扩展 / Installer 幽灵项 / 快捷方式任务环境变量 /
+        /// IFEO / 待处理重命名 / hosts。
+        /// </summary>
         public static List<ResidueFinding> ScanResidues(Action<string> log)
         {
             var found = new List<ResidueFinding>();
@@ -81,23 +86,51 @@ namespace AutoFix
                 }
             }
 
-            Log(log, "扫描注册表 ...");
-            ScanRegistryResidues(Add, log);
-
-            Log(log, "扫描文件与目录 ...");
-            ScanFileResidues(Add, log);
-
-            Log(log, "扫描服务 ...");
-            ScanServiceResidues(Add, log);
-
-            Log(log, "扫描进程 ...");
-            ScanProcessResidues(Add, log);
-
-            Log(log, "扫描卸载项 ...");
+            Log(log, "[ 1/15] 已注册产品 ...");
             ScanUninstallResidues(Add, log);
 
-            Log(log, "扫描快捷方式 ...");
+            Log(log, "[ 2/15] 运行中的进程 ...");
+            ScanProcessResidues(Add, log);
+
+            Log(log, "[ 3/15] 服务 ...");
+            ScanServiceResidues(Add, log);
+
+            Log(log, "[ 4/15] 程序目录 ...");
+            ScanFileResidues(Add, log);
+
+            Log(log, "[ 5/15] 数据目录 ...");
+            ScanDataFolders(Add, log);
+
+            Log(log, "[ 6/15] 全盘搜索 ...");
+            ScanWholeSystem(Add, log);
+
+            Log(log, "[ 7/15] 注册表分支 ...");
+            ScanRegistryResidues(Add, log);
+
+            Log(log, "[ 8/15] COM 注册（CLSID / TypeLib）...");
+            ScanComRegistry(Add, log);
+
+            Log(log, "[ 9/15] HKCU 类注册 ...");
+            ScanUserClasses(Add, log);
+
+            Log(log, "[10/15] 外壳扩展 ...");
+            ScanShellExtensions(Add, log);
+
+            Log(log, "[11/15] Installer 幽灵项 ...");
+            ScanInstallerGhosts(Add, log);
+
+            Log(log, "[12/15] 快捷方式 / 计划任务 / 环境变量 ...");
             ScanShortcutResidues(Add, log);
+            ScanTasksAndEnv(Add, log);
+
+            Log(log, "[13/15] IFEO 调试器劫持 ...");
+            ScanIfeo(Add, log);
+
+            Log(log, "[14/15] 待处理文件重命名 ...");
+            ScanPendingRename(Add, log);
+
+            Log(log, "[15/15] hosts 条目 ...");
+            ScanHosts(Add, log);
 
             Log(log, "扫描完成，共 " + found.Count + " 项");
             return found;
@@ -431,4 +464,3 @@ namespace AutoFix
         }
     }
 }
-
