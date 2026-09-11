@@ -1,0 +1,45 @@
+<!-- 兼容版：目标 .NET Framework 4.0，可在 Win7 SP1 及以上直接运行。 -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net40</TargetFramework>
+    <AssemblyName>AutoFix</AssemblyName>
+    <RootNamespace>AutoFix</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyTitle>Autodesk 修复工具箱</AssemblyTitle>
+    <Product>AutoFix</Product>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="MainForm.cs" />
+    <Compile Include="RepairService.cs" />
+    <Compile Include="RepairService.More.cs" />
+    <Compile Include="RepairService.Detection.cs" />
+    <Compile Include="RepairService.Extended.cs" />
+    <Compile Include="RepairService.Extended2.cs" />
+    <Compile Include="ResultForm.cs" />
+    <Compile Include="VolumeCacheForm.cs" />
+    <Compile Include="ResidueScan.cs" />
+    <Compile Include="RepairService.Extended3.cs" />
+    <Compile Include="ResidueForm.cs" />
+    <Compile Include="RepairService.DryRun.cs" />
+    <Compile Include="RepairService.Oda.cs" />
+    <Compile Include="ChoiceForm.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Management" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net40" Version="1.0.3" />
+  </ItemGroup>
+
+</Project>

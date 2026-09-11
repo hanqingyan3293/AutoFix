@@ -1,0 +1,27 @@
+# 构建产物
+bin/
+obj/
+*.user
+*.pdb
+
+# 工具与中间文件
+.tools/
+*.log
+types.txt
+
+# 原始样本与反编译产物
+# 注意：decompiled/ 是第三方程序的 ILSpy 反编译结果（约 14 MB，可随时重新生成）。
+# 默认不入库：一是体积，二是它属于原程序的表达，不属于本项目代码。
+# 如需保留一份用于对照，删掉下面两行即可。
+Autobox1.0.4.exe
+decompiled/
+
+# 交付物
+# 如需把编译好的 exe 一并入库，删掉下面这行
+AutoFixTool/bin/
+
+# 第三方参考资料（他人项目与压缩包，约 9.6 MB）
+# 这两个项目仅作参考阅读，不属本项目代码；如需入库可删掉下面的规则。
+#   autodesk-complete-uninstaller (MIT)
+#   ExtrabbitCode.AdskLicensingModifier (MIT)
+参考/
