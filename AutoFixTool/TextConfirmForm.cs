@@ -15,6 +15,7 @@ namespace AutoFix
 
         public TextConfirmForm(string title, string message, string expectWord)
         {
+            AppIcon.Apply(this);
             _expect = string.IsNullOrEmpty(expectWord) ? "YES" : expectWord;
 
             Text = title;
@@ -129,4 +130,3 @@ namespace AutoFix
         }
     }
 }
-

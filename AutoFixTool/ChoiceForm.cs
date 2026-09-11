@@ -11,6 +11,7 @@ namespace AutoFix
 
         public ChoiceForm(string title, string prompt, string[] choices)
         {
+            AppIcon.Apply(this);
             Text = title;
             ClientSize = new Size(400, 190);
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -88,4 +89,3 @@ namespace AutoFix
         }
     }
 }
-

@@ -39,6 +39,7 @@ namespace AutoFix
 
         public ResultForm(EnvironmentReport report)
         {
+            AppIcon.Apply(this);
             _report = report;
             BuildUi();
             FillChecks();

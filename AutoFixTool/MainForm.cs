@@ -78,6 +78,7 @@ namespace AutoFix
 
         public MainForm()
         {
+            AppIcon.Apply(this);
             BuildCatalog();
             BuildUi();
         }

@@ -36,6 +36,7 @@ namespace AutoFix
 
         public LicenseForm(LicenseMethod method, bool lookupOnly)
         {
+            AppIcon.Apply(this);
             _method = method;
             _lookupOnly = lookupOnly;
             BuildUi();
@@ -480,4 +481,3 @@ namespace AutoFix
         }
     }
 }
-

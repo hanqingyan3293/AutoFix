@@ -21,6 +21,7 @@ namespace AutoFix
 
         public VolumeCacheForm(List<RepairService.VolumeCacheEntry> entries)
         {
+            AppIcon.Apply(this);
             _entries = entries;
             BuildUi();
             Fill();
@@ -211,4 +212,3 @@ namespace AutoFix
         }
     }
 }
-

@@ -20,6 +20,7 @@ namespace AutoFix
 
         public RiskyTargetsForm(List<RiskyTarget> items)
         {
+            AppIcon.Apply(this);
             _items = items;
             BuildUi();
         }
@@ -196,4 +197,3 @@ namespace AutoFix
         }
     }
 }
-

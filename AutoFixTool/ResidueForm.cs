@@ -21,6 +21,7 @@ namespace AutoFix
 
         public ResidueForm(List<ResidueFinding> findings)
         {
+            AppIcon.Apply(this);
             _all = findings;
             BuildUi();
             Fill();

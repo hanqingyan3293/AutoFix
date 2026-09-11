@@ -15,6 +15,7 @@ namespace AutoFix
 
         public AuditForm(string report)
         {
+            AppIcon.Apply(this);
             _report = report;
             BuildUi();
         }
@@ -128,4 +129,3 @@ namespace AutoFix
         }
     }
 }
-

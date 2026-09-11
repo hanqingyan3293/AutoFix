@@ -47,6 +47,7 @@
     <Compile Include="RiskyTargets.cs" />
     <Compile Include="RiskyTargetsForm.cs" />
     <Compile Include="ResidueScan.More.cs" />
+    <Compile Include="AppIcon.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -56,6 +57,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Assets/AutodeskProducts.txt" />
+    <!-- 内嵌为托管资源，供窗体设置 Icon（ApplicationIcon 只影响 exe 在资源管理器中的显示） -->
+    <EmbeddedResource Include="app.ico" />
   </ItemGroup>
 
   <ItemGroup>

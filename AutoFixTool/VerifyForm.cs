@@ -20,6 +20,7 @@ namespace AutoFix
 
         public VerifyForm(List<VerifyItem> items)
         {
+            AppIcon.Apply(this);
             _items = items;
             BuildUi();
             Fill();
@@ -216,4 +217,3 @@ namespace AutoFix
         }
     }
 }
-

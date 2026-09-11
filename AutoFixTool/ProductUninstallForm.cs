@@ -36,6 +36,7 @@ namespace AutoFix
 
         public ProductUninstallForm(List<ProductItem> products)
         {
+            AppIcon.Apply(this);
             _products = products;
             BuildUi();
             Fill();

@@ -15,6 +15,7 @@ namespace AutoFix
 
         public DeepCleanOptionsForm()
         {
+            AppIcon.Apply(this);
             Text = "深度清理选项";
             ClientSize = new Size(560, 250);
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -115,4 +116,3 @@ namespace AutoFix
         }
     }
 }
-
