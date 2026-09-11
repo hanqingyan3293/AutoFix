@@ -461,7 +461,7 @@ namespace AutoFix
                     entries++;
                     string lower = line.ToLowerInvariant();
                     if (lower.Contains("autodesk") || lower.Contains("adsk") ||
-                        lower.Contains("genuine") || lower.Contains("rj818"))
+                        lower.Contains("genuine"))
                     {
                         suspicious.Add(line);
                     }

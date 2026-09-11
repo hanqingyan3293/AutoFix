@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: 构建 AutoFix（net472）
+        run: dotnet build AutoFixTool/AutoFix.csproj -c Release
+
+      - name: 构建 AutoFix（net40 兼容版）
+        run: dotnet build AutoFixTool/AutoFix.net40.csproj -c Release
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: autofix-binaries
+          if-no-files-found: error
+          path: |
+            AutoFixTool/bin/Release/net472/AutoFix.exe
+            AutoFixTool/bin/Release/net40/AutoFix.exe

@@ -1,0 +1,19 @@
+# 统一按文本处理并自动规范化换行
+* text=auto
+
+# 二进制文件不做换行转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.exe binary
+*.dll binary
+*.zip binary
+*.7z binary
+
+# 语言识别与 diff 优化
+*.cs text diff=csharp
+*.csproj text diff=xml
+*.md text
+
