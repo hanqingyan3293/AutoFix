@@ -35,6 +35,9 @@
     <Compile Include="LicenseForm.cs" />
     <Compile Include="RepairService.Uninstall.cs" />
     <Compile Include="ProductUninstallForm.cs" />
+    <Compile Include="RepairService.Uninstall2.cs" />
+    <Compile Include="RepairService.Verify.cs" />
+    <Compile Include="VerifyForm.cs" />
   </ItemGroup>
 
   <ItemGroup>

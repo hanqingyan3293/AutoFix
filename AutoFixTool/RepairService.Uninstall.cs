@@ -197,7 +197,7 @@ namespace AutoFix
         /// 阶段：还原点 → 停进程/服务 → 多轮卸载 → 目录 → 快捷方式 → 缓存 → 注册表 → 复查。
         /// </summary>
         internal static string UninstallProducts(List<ProductItem> selected, bool restorePoint,
-            bool deepClean, Action<string> log)
+            bool deepClean, bool multiUser, Action<string> log)
         {
             var report = new StringBuilder();
             int ok = 0, failed = 0;
@@ -269,9 +269,26 @@ namespace AutoFix
             if (deepClean)
             {
                 Log(log, "[阶段 E] 删除残留目录 ...");
+                var locked = new List<string>();
                 foreach (string d in UninstallFolders)
                 {
+                    bool existed = false;
+                    try { existed = System.IO.Directory.Exists(d); } catch { }
                     DeleteDirectory(d, log);
+                    if (existed)
+                    {
+                        try { if (System.IO.Directory.Exists(d)) { locked.Add(d); } } catch { }
+                    }
+                }
+
+                // --- Phase E3：重试被占用的目录 ---
+                if (locked.Count > 0)
+                {
+                    List<string> still = RetryLockedFolders(locked, log);
+                    if (still.Count > 0)
+                    {
+                        Log(log, "  " + still.Count + " 个目录仍被占用，已安排重启后清理");
+                    }
                 }
 
                 Log(log, "[阶段 E2] 清理快捷方式 ...");
@@ -301,6 +318,16 @@ namespace AutoFix
                     DeleteRegistryKey(RegistryHive.LocalMachine, branch, log);
                     DeleteRegistryKey(RegistryHive.CurrentUser, branch, log);
                 }
+
+                if (multiUser)
+                {
+                    Log(log, "[多用户清理] 处理其他用户配置文件 ...");
+                    string mu = CleanOtherUserProfiles(log);
+                    Log(log, "  " + mu);
+                    report.AppendLine(mu);
+                }
+
+                FlushInstallerServices(log);
             }
 
             // --- 复查 ---
@@ -523,4 +550,3 @@ namespace AutoFix
         }
     }
 }
-

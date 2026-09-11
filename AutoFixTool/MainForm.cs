@@ -30,6 +30,7 @@ namespace AutoFix
             public LicenseMethod LicenseMethod = LicenseMethod.Standalone;
             public bool IsLicenseLookup;                          // 只读产品密钥查询
             public bool IsProductUninstall;                       // 打开产品卸载窗口
+            public bool IsVerify;                                 // 清理后校验
         }
 
         private sealed class Category
@@ -546,6 +547,13 @@ namespace AutoFix
                 Desc = "扫描六类 Autodesk 残留并在结果页中查看、筛选、导出。",
                 IsResidueScan = true
             });
+            residue.Items.Add(new FixItem
+            {
+                Name = "清理后校验",
+                Desc = "10 项只读检查：ODIS 锁文件、IFEO 劫持、组件版本、Access 服务、ODIS 基础设施、"
+                     + ".pit 文件、TEMP 路径、VC++ 运行库、事件日志、hosts 条目。判断是否已具备干净重装条件。",
+                IsVerify = true
+            });
 
             var uninst = new Category
             {
@@ -943,6 +951,12 @@ namespace AutoFix
             if (item.IsProductUninstall)
             {
                 RunProductUninstall();
+                return;
+            }
+
+            if (item.IsVerify)
+            {
+                RunVerify();
                 return;
             }
 
@@ -1377,6 +1391,7 @@ namespace AutoFix
                             var sel = f.SelectedProducts;
                             bool rp = f.CreateRestorePoint;
                             bool deep = f.DeepClean;
+                            bool multi = f.MultiUser;
 
                             _status.Text = RepairService.DryRun ? "预演中，请稍候..." : "正在卸载，请稍候...";
                             AppendLog("—— 开始卸载 " + sel.Count + " 个产品 ——");
@@ -1391,7 +1406,7 @@ namespace AutoFix
                                 bool failed;
                                 try
                                 {
-                                    result = RepairService.UninstallProducts(sel, rp, deep, AppendLog);
+                                    result = RepairService.UninstallProducts(sel, rp, deep, multi, AppendLog);
                                     failed = result.Contains("失败");
                                 }
                                 catch (Exception ex)
@@ -1428,6 +1443,55 @@ namespace AutoFix
                             });
                             t2.IsBackground = true;
                             t2.Start();
+                        }
+                    }));
+                }
+                catch { }
+            });
+            t.IsBackground = true;
+            t.Start();
+        }
+
+        /// <summary>只读执行 10 项清理后校验，完成后弹出结果窗口。</summary>
+        private void RunVerify()
+        {
+            _busy = true;
+            SetButtonsEnabled(false);
+            _status.Text = "正在校验，请稍候...";
+            AppendLog("—— 开始清理后校验 ——");
+
+            var t = new Thread(() =>
+            {
+                List<VerifyItem> items = null;
+                string error = null;
+                try
+                {
+                    items = RepairService.RunVerification(AppendLog);
+                }
+                catch (Exception ex)
+                {
+                    error = ex.Message;
+                }
+
+                try
+                {
+                    BeginInvoke((Action)(() =>
+                    {
+                        _busy = false;
+                        SetButtonsEnabled(true);
+                        UpdateStatus();
+                        AppendLog("—— 校验结束 ——");
+
+                        if (items == null)
+                        {
+                            MessageBox.Show(this, "校验失败：" + error, "执行失败",
+                                MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                            return;
+                        }
+
+                        using (var f = new VerifyForm(items))
+                        {
+                            f.ShowDialog(this);
                         }
                     }));
                 }
