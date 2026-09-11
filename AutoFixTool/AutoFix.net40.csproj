@@ -42,6 +42,7 @@
     <Compile Include="TextConfirmForm.cs" />
     <Compile Include="AuditForm.cs" />
     <Compile Include="RepairService.Cleanup.cs" />
+    <Compile Include="DeepCleanOptionsForm.cs" />
   </ItemGroup>
 
   <ItemGroup>

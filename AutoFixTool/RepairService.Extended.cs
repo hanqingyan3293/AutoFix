@@ -389,11 +389,14 @@ namespace AutoFix
         {
             try
             {
-                Process.Start(new ProcessStartInfo
+                using (Process p = Process.Start(new ProcessStartInfo
                 {
                     FileName = "windowsdefender://smartapp/",
                     UseShellExecute = true
-                });
+                }))
+                {
+                    if (p != null) { p.Dispose(); }
+                }
                 return "已打开「智能应用控制」设置页，请手动将选项设为「关闭」。\r\n\r\n"
                      + "1. 在页面中选择「关闭」（关闭后可能较难再次开启，请自行确认风险）；\r\n"
                      + "2. 关闭窗口后，重新运行安装程序。\r\n\r\n"

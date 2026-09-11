@@ -317,38 +317,149 @@ namespace AutoFix
 
         // ==================== 共享组件（Phase D） ====================
 
-        /// <summary>清理 Autodesk 共享组件目录（对应参考项目的 Phase D）。</summary>
-        internal static int CleanSharedComponents(Action<string> log)
+        /// <summary>
+        /// Phase D：调用各共享组件自带的官方卸载程序（而非直接删目录）。
+        /// 顺序与参考项目一致：Desktop App → Identity Manager → ODIS → AdskLicensing
+        /// → AdskUninstallHelper → 删 .pit 与 Genuine id.dat。
+        /// </summary>
+        internal static List<string> RunSharedComponentUninstallers(Action<string> log)
         {
-            var dirs = new List<string>
-            {
-                @"C:\Program Files\Common Files\Autodesk Shared",
-                @"C:\Program Files (x86)\Common Files\Autodesk Shared",
-                @"C:\Program Files\Common Files\Autodesk",
-                @"C:\Program Files (x86)\Common Files\Autodesk",
-                @"C:\Program Files\Common Files\Macrovision Shared\FlexNet Publisher",
-                @"C:\Program Files (x86)\Common Files\Macrovision Shared\FlexNet Publisher"
-            };
+            var notes = new List<string>();
 
-            int n = 0;
-            foreach (string d in dirs)
+            // 1) Autodesk Desktop App（先删 SDS 目录）
+            string adApp = @"C:\Program Files (x86)\Autodesk\Autodesk Desktop App\removeAdAppMgr.exe";
+            if (File.Exists(adApp))
             {
-                try
+                Log(log, "  卸载 Autodesk Desktop App ...");
+                DeleteDirectory(@"C:\ProgramData\Autodesk\SDS", log);
+                RunInstallerQuiet(adApp, "--mode unattended", log);
+                notes.Add("已卸载 Autodesk Desktop App");
+            }
+
+            // 2) AdskIdentityManager
+            string idMgr = @"C:\Program Files\Autodesk\AdskIdentityManager\uninstall.exe";
+            if (File.Exists(idMgr))
+            {
+                Log(log, "  卸载 AdskIdentityManager ...");
+                RunInstallerQuiet(idMgr, "--mode unattended", log);
+                notes.Add("已卸载 AdskIdentityManager");
+            }
+
+            // 3) ODIS（先删锁文件，否则会卡住）
+            string removeOdis = @"C:\Program Files\Autodesk\AdODIS\V1\RemoveODIS.exe";
+            if (File.Exists(removeOdis))
+            {
+                Log(log, "  卸载 ODIS ...");
+                FsDeleteFile(@"C:\ProgramData\Autodesk\ODIS\AdODISInstaller.run.lock", log);
+                RunInstallerQuiet(removeOdis, "--mode unattended", log);
+                notes.Add("已卸载 ODIS");
+            }
+
+            // 4) AdskLicensing；卸载程序不存在时退回 sc delete
+            string adskLic = @"C:\Program Files (x86)\Common Files\Autodesk Shared\AdskLicensing\uninstall.exe";
+            if (File.Exists(adskLic))
+            {
+                Log(log, "  卸载 AdskLicensing ...");
+                RunInstallerQuiet(adskLic, "--mode unattended", log);
+                notes.Add("已卸载 AdskLicensing");
+            }
+            else
+            {
+                if (GetServiceState("AdskLicensingService") != "未安装")
                 {
-                    if (Directory.Exists(d))
+                    Log(log, "  AdskLicensing 卸载程序不存在，改用 sc delete ...");
+                    RunCommand("sc", "delete AdskLicensingService", true);
+                    notes.Add("已删除 AdskLicensingService 服务注册");
+                }
+            }
+
+            // 5) AdskUninstallHelper（每个产品目录一个，静默 -q，带 5 分钟超时）
+            int helpers = 0;
+            try
+            {
+                string root = @"C:\ProgramData\Autodesk\Uninstallers";
+                if (Directory.Exists(root))
+                {
+                    foreach (string dir in Directory.GetDirectories(root))
                     {
-                        Log(log, "  删除共享组件目录：" + d);
-                        bool existed = true;
-                        DeleteDirectory(d, log);
-                        if (existed && !Directory.Exists(d))
+                        string helper = Path.Combine(dir, "AdskUninstallHelper.exe");
+                        if (!File.Exists(helper))
                         {
-                            n++;
+                            continue;
+                        }
+                        Log(log, "  运行 AdskUninstallHelper：" + Path.GetFileName(dir));
+                        if (RunInstallerQuiet(helper, "-q", log))
+                        {
+                            helpers++;
                         }
                     }
                 }
-                catch { }
             }
-            return n;
+            catch { }
+            if (helpers > 0)
+            {
+                notes.Add("已运行 AdskUninstallHelper " + helpers + " 个");
+            }
+
+            // 6) 删除 .pit 与 Genuine 的 id.dat
+            Log(log, "  删除 ProductInformation.pit 与 Genuine id.dat ...");
+            foreach (string pit in PitPaths())
+            {
+                FsDeleteFile(pit, log);
+            }
+            try
+            {
+                string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                if (!string.IsNullOrEmpty(local))
+                {
+                    FsDeleteFile(Path.Combine(local, "Autodesk", "Genuine Autodesk Service", "id.dat"), log);
+                }
+            }
+            catch { }
+
+            return notes;
+        }
+
+        /// <summary>以静默方式运行安装/卸载程序，返回是否成功。</summary>
+        private static bool RunInstallerQuiet(string exe, string args, Action<string> log)
+        {
+            if (DryRun)
+            {
+                DryNote("运行 " + Path.GetFileName(exe) + " " + args, log);
+                return true;
+            }
+            try
+            {
+                using (System.Diagnostics.Process p = System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = exe,
+                        Arguments = args,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+                    }))
+                {
+                    if (p == null)
+                    {
+                        Log(log, "    无法启动：" + exe);
+                        return false;
+                    }
+                    if (!p.WaitForExit(300000))
+                    {
+                        try { p.Kill(); } catch { }
+                        Log(log, "    超时（5 分钟），已终止：" + Path.GetFileName(exe));
+                        return false;
+                    }
+                    Log(log, "    退出代码：" + p.ExitCode);
+                    return p.ExitCode == 0 || p.ExitCode == 3010;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log(log, "    执行失败：" + Path.GetFileName(exe) + " -> " + ex.Message);
+                return false;
+            }
         }
 
         // ==================== 公用：注册表分支备份 ====================
@@ -406,7 +517,8 @@ namespace AutoFix
         /// 阶段顺序对齐参考项目：B → C2 → 幽灵项 → D → E → E3 → E2 → F → G → H
         ///   → PATH → 多用户 → 刷新服务 → I（Genuine Service，放最后）。
         /// </summary>
-        internal static List<string> RunDeepClean(bool stopProcessesFirst, bool multiUser, Action<string> log)
+        internal static List<string> RunDeepClean(bool stopProcessesFirst, bool multiUser,
+            bool cleanInstallers, Action<string> log)
         {
             var notes = new List<string>();
 
@@ -436,21 +548,24 @@ namespace AutoFix
             notes.Add("清理 Installer 幽灵项 " + ghosts + " 个");
 
             // --- Phase D ---
-            Log(log, "[阶段 D] 清理共享组件目录 ...");
-            int shared = CleanSharedComponents(log);
-            notes.Add("清理共享组件目录 " + shared + " 个");
+            Log(log, "[阶段 D] 调用共享组件的官方卸载程序 ...");
+            notes.AddRange(RunSharedComponentUninstallers(log));
 
             // --- Phase E ---
             Log(log, "[阶段 E] 删除残留目录 ...");
             var locked = new List<string>();
-            foreach (string d in UninstallFolders)
             {
-                bool existed = false;
-                try { existed = Directory.Exists(d); } catch { }
-                DeleteDirectory(d, log);
-                if (existed)
+                var allFolders = new List<string>(UninstallFolders);
+                allFolders.AddRange(UserLevelFolders());
+                foreach (string d in allFolders)
                 {
-                    try { if (Directory.Exists(d)) { locked.Add(d); } } catch { }
+                    bool existed = false;
+                    try { existed = Directory.Exists(d); } catch { }
+                    DeleteDirectory(d, log);
+                    if (existed)
+                    {
+                        try { if (Directory.Exists(d)) { locked.Add(d); } } catch { }
+                    }
                 }
             }
 
@@ -472,9 +587,16 @@ namespace AutoFix
             // --- Phase F ---
             Log(log, "[阶段 F] 清理缓存 ...");
             CleanAutodeskCaches(log);
-            Log(log, "[阶段 F2] 清理安装包与下载缓存 ...");
-            int dl = CleanInstallerDownloads(log);
-            notes.Add("清理安装包目录 " + dl + " 个");
+            if (cleanInstallers)
+            {
+                Log(log, "[阶段 F2] 清理安装包与下载缓存 ...");
+                int dl = CleanInstallerDownloads(log);
+                notes.Add("清理安装包目录 " + dl + " 个");
+            }
+            else
+            {
+                Log(log, "[阶段 F2] 跳过安装包与下载缓存清理（未启用）");
+            }
 
             // --- Phase G ---
             Log(log, "[阶段 G] 清理服务注册、计划任务、防火墙规则 ...");

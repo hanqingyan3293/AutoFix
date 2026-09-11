@@ -1493,6 +1493,7 @@ namespace AutoFix
                             bool rp = f.CreateRestorePoint;
                             bool deep = f.DeepClean;
                             bool multi = f.MultiUser;
+                            bool cleanInst = f.CleanInstallers;
                             if (forceDeepClean)
                             {
                                 deep = true;
@@ -1511,7 +1512,7 @@ namespace AutoFix
                                 bool failed;
                                 try
                                 {
-                                    result = RepairService.UninstallProducts(sel, rp, deep, multi, AppendLog);
+                                    result = RepairService.UninstallProducts(sel, rp, deep, multi, cleanInst, AppendLog);
                                     failed = result.Contains("失败");
                                 }
                                 catch (Exception ex)
@@ -1691,22 +1692,31 @@ namespace AutoFix
         /// <summary>#4 仅深度清理残留。</summary>
         private void RunDeepCleanOnly()
         {
-            bool multi = MessageBox.Show(this,
-                "是否同时清理其他用户配置文件中的 Autodesk 残留？" + Environment.NewLine + Environment.NewLine
-                + "选择「是」将同时处理其他用户的注册表与 AppData（已登录用户会跳过）。",
-                "多用户清理", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
-                MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+            bool multi;
+            bool cleanInst;
+            using (var opt = new DeepCleanOptionsForm())
+            {
+                if (opt.ShowDialog(this) != DialogResult.OK)
+                {
+                    AppendLog("已取消深度清理");
+                    return;
+                }
+                multi = opt.MultiUser;
+                cleanInst = opt.CleanInstallers;
+            }
 
             string warn = "「仅深度清理残留」将执行以下操作：" + Environment.NewLine + Environment.NewLine
                 + "  · 结束 23 个 Autodesk 相关进程、停止 5 个服务" + Environment.NewLine
-                + "  · 永久删除 7 个残留目录（含 Program Files / ProgramData 下的 Autodesk）" + Environment.NewLine
-                + "  · 清理桌面与开始菜单快捷方式" + Environment.NewLine
-                + "  · 清理缓存目录" + Environment.NewLine
+                + "  · 调用共享组件官方卸载程序（Desktop App / Identity Manager / ODIS / AdskLicensing）" + Environment.NewLine
+                + "  · 永久删除 Autodesk 残留目录（含 Program Files / ProgramData / 公共文档）" + Environment.NewLine
+                + "  · 清理桌面与开始菜单快捷方式、缓存目录" + Environment.NewLine
                 + "  · 删除服务注册、计划任务、防火墙规则" + Environment.NewLine
-                + "  · 清理 IFEO 劫持项、HKCU 类键、注册表分支、相关环境变量" + Environment.NewLine
+                + "  · 清理 IFEO 劫持项、HKCU 类键、注册表分支、相关环境变量、系统 PATH" + Environment.NewLine
+                + (cleanInst ? "  · 清理安装包与下载缓存（含「下载」目录中的 Autodesk 安装包）" + Environment.NewLine : "")
                 + (multi ? "  · 清理其他用户配置文件" + Environment.NewLine : "")
                 + "  · 刷新 Windows Installer 服务" + Environment.NewLine + Environment.NewLine
-                + "⚠ 不会卸载任何产品，但会删除残留目录与注册表，不可撤销。" + Environment.NewLine + Environment.NewLine
+                + "⚠ 不会卸载已安装产品，但会删除残留目录与注册表，不可撤销。" + Environment.NewLine
+                + "⚠ 其中 FlexNet Publisher 为多厂商共用组件，删除可能影响其他使用 FlexNet 授权的软件。" + Environment.NewLine + Environment.NewLine
                 + "确认执行？";
 
             if (MessageBox.Show(this, warn, "确认深度清理",
@@ -1725,7 +1735,7 @@ namespace AutoFix
             }
 
             RunWork(RepairService.DryRun ? "预演中..." : "正在深度清理...", "—— 深度清理残留 ——",
-                () => RepairService.DeepCleanOnly(multi, AppendLog));
+                () => RepairService.DeepCleanOnly(multi, cleanInst, AppendLog));
         }
 
         /// <summary>#5 17 项完整验证。</summary>

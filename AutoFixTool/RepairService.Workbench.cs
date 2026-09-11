@@ -16,9 +16,9 @@ namespace AutoFix
         // ==================== #4 仅深度清理残留 ====================
 
         /// <summary>不卸载产品，只清理残留（对应参考项目的 Deep Clean Only）。</summary>
-        internal static string DeepCleanOnly(bool multiUser, Action<string> log)
+        internal static string DeepCleanOnly(bool multiUser, bool cleanInstallers, Action<string> log)
         {
-            List<string> notes = RunDeepClean(true, multiUser, log);
+            List<string> notes = RunDeepClean(true, multiUser, cleanInstallers, log);
 
             var sb = new StringBuilder();
             sb.AppendLine("深度清理完成（未卸载任何产品）。");

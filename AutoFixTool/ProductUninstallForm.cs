@@ -21,6 +21,7 @@ namespace AutoFix
         private CheckBox _restorePoint;
         private CheckBox _deepClean;
         private CheckBox _multiUser;
+        private CheckBox _installers;
         private Label _summary;
         private Button _run;
 
@@ -28,6 +29,7 @@ namespace AutoFix
         public bool CreateRestorePoint { get; private set; }
         public bool DeepClean { get; private set; }
         public bool MultiUser { get; private set; }
+        public bool CleanInstallers { get; private set; }
         public bool Confirmed { get; private set; }
 
         public ProductUninstallForm(List<ProductItem> products)
@@ -87,7 +89,7 @@ namespace AutoFix
             footer.Controls.Add(buttons);
 
             // ---- 选项区 ----
-            var options = new Panel { Dock = DockStyle.Top, Height = 86, Padding = new Padding(16, 8, 16, 0) };
+            var options = new Panel { Dock = DockStyle.Top, Height = 110, Padding = new Padding(16, 8, 16, 0) };
             _restorePoint = new CheckBox
             {
                 Text = "卸载前创建系统还原点（建议开启，失败则继续）",
@@ -110,9 +112,17 @@ namespace AutoFix
                 Width = 560,
                 Cursor = Cursors.Hand
             };
+            _installers = new CheckBox
+            {
+                Text = "清理安装包与下载缓存（会删除「下载」目录中的 Autodesk 安装包）",
+                Location = new Point(16, 82),
+                Width = 620,
+                Cursor = Cursors.Hand
+            };
             options.Controls.Add(_restorePoint);
             options.Controls.Add(_deepClean);
             options.Controls.Add(_multiUser);
+            options.Controls.Add(_installers);
 
             var toggles = new Panel { Dock = DockStyle.Right, Width = 200, Padding = new Padding(0, 8, 14, 0) };
             var all = MakeButton("全选", 80, false);
@@ -263,6 +273,10 @@ namespace AutoFix
             {
                 sb.AppendLine("  · 清理其他用户配置文件中的 Autodesk 注册表与 AppData（已登录用户会跳过）");
             }
+            if (_installers.Checked)
+            {
+                sb.AppendLine("  · 清理安装包与下载缓存（含「下载」目录中的 Autodesk 安装包）");
+            }
             sb.AppendLine();
             sb.Append("确认开始卸载？");
 
@@ -277,6 +291,7 @@ namespace AutoFix
             CreateRestorePoint = _restorePoint.Checked;
             DeepClean = _deepClean.Checked;
             MultiUser = _multiUser.Checked;
+            CleanInstallers = _installers.Checked;
             Confirmed = true;
             DialogResult = DialogResult.OK;
             Close();

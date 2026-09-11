@@ -188,12 +188,16 @@ dotnet build AutoFixTool/AutoFix.csproj -c Release
     B  结束 23 个进程、停止 5 个服务
     C2 强制清除多轮卸载后仍残留的注册表项
     幽灵项 删除 Installer\Products 下 ProductName 含 Autodesk 的记录（删除前导出 .reg 备份）
-    D  清理共享组件目录（Common Files 下的 Autodesk Shared / FlexNet Publisher）
-    E  删除 7 个残留目录
+    D  调用共享组件的**官方卸载程序**：Desktop App（removeAdAppMgr）
+       → Identity Manager → ODIS（RemoveODIS）→ AdskLicensing
+       → AdskUninstallHelper -q（每个产品一个，5 分钟超时）
+       → 删 .pit 与 Genuine id.dat；AdskLicensing 卸载程序缺失时退回 sc delete
+    E  删除 11 个机器级目录 + 3 个用户级目录（AppData\\Autodesk、LocalAppData\\Autodesk、LocalAppData\\Programs\\Autodesk）
     E3 重试被占用的目录；仍失败则登记 RunOnce
     E2 清理桌面 / 开始菜单快捷方式
     F  清理 Autodesk 缓存目录
-    F2 清理安装包与下载缓存（C:\Autodesk、Uninstallers、ODIS metadata、下载目录）
+    F2 清理安装包与下载缓存（**需显式勾选**）：C:\Autodesk、Uninstallers、
+       ODIS metadata、下载目录中的 Autodesk 安装包
     G  删除服务注册、计划任务、防火墙规则
     H  清理 IFEO 劫持项、HKCU 类键、注册表分支、相关环境变量
     PATH 从系统 PATH 移除 Autodesk / AdODIS 条目（修改前导出备份）
@@ -329,7 +333,17 @@ change --prod_key <产品密钥> --prod_ver <2024.0.0.F> --lic_method NETWORK|ST
 - **执行不阻塞界面**：修复在后台线程运行，日志实时回显；执行期间所有按钮禁用，避免并发触发。
 - **失败可辨识**：结果含「失败」「异常」时，弹窗标题为「执行失败」并使用错误图标。
 
-## 需要注意的两项
+## 需要注意的风险点
+
+1. **FlexNet Publisher 为多厂商共用组件。** 参考项目在 Phase E 中无条件删除
+   `C:\Program Files\Common Files\Macrovision Shared`。该目录下的 FlexNet 授权运行时
+   被 Adobe、PTC、Siemens 等厂商的产品共用，删除后**可能影响其他使用 FlexNet 授权的软件**。
+   本工具保留该行为（与参考项目一致），但在确认框中单独警示。
+   如需移除这一项，删掉 `RepairService.Uninstall.cs` 中 `UninstallFolders` 的最后一行即可。
+
+2. **安装包与下载缓存清理默认关闭。** 该步骤会删除用户「下载」目录中匹配
+   `*Autodesk*` 的安装包——即你自己下载保存的安装程序，删除后重装需重新下载。
+   因参考项目将其置于 `CLEAN_INSTALLERS` 可选开关之后，本工具同样做成显式勾选项。
 
 以下两项是忠实还原原程序逻辑的结果，但**判断依据较宽，影响范围可能超出 Autodesk**，执行前请务必确认：
 

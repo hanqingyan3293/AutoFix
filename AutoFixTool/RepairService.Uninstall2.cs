@@ -64,11 +64,15 @@ namespace AutoFix
             {
                 string win = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
                 string exe = string.IsNullOrEmpty(win) ? "explorer.exe" : Path.Combine(win, "explorer.exe");
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                using (System.Diagnostics.Process p = System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = exe,
+                        UseShellExecute = true
+                    }))
                 {
-                    FileName = exe,
-                    UseShellExecute = true
-                });
+                    if (p != null) { p.Dispose(); }
+                }
             }
             catch { }
             Thread.Sleep(2000);

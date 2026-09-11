@@ -65,14 +65,38 @@ namespace AutoFix
         /// <summary>需要删除的目录（深度清理阶段）。</summary>
         private static readonly string[] UninstallFolders =
         {
+            // 与参考项目 Phase E 的清单逐项对齐
             @"C:\Program Files\Autodesk",
-            @"C:\Program Files (x86)\Autodesk",
-            @"C:\ProgramData\Autodesk",
-            @"C:\ProgramData\Autodesk\ODIS",
-            @"C:\Autodesk",
             @"C:\Program Files\Common Files\Autodesk Shared",
-            @"C:\Program Files (x86)\Common Files\Autodesk Shared"
+            @"C:\Program Files\Common Files\Autodesk",
+            @"C:\Program Files (x86)\Autodesk",
+            @"C:\Program Files (x86)\Common Files\Autodesk Shared",
+            @"C:\Program Files (x86)\Common Files\Autodesk",
+            @"C:\ProgramData\Autodesk",
+            @"C:\Users\Public\Documents\Autodesk",
+            @"C:\Users\Public\Autodesk",
+            @"C:\Autodesk",
+            // 注意：Macrovision Shared\\FlexNet Publisher 被多个厂商共用（Adobe / PTC / Siemens 等）。
+            // 参考项目在此无条件删除；本工具保留该行为，但在确认框中单独警示。
+            @"C:\Program Files\Common Files\Macrovision Shared"
         };
+
+        /// <summary>用户级 Autodesk 目录（随当前用户清理）。</summary>
+        private static IEnumerable<string> UserLevelFolders()
+        {
+            string roaming = null, local = null;
+            try { roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData); } catch { }
+            try { local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData); } catch { }
+            if (!string.IsNullOrEmpty(roaming))
+            {
+                yield return Path.Combine(roaming, "Autodesk");
+            }
+            if (!string.IsNullOrEmpty(local))
+            {
+                yield return Path.Combine(local, "Autodesk");
+                yield return Path.Combine(local, "Programs", "Autodesk");
+            }
+        }
 
         /// <summary>需要清理的注册表分支（深度清理阶段）。</summary>
         private static readonly string[] UninstallRegistryBranches =
@@ -197,7 +221,7 @@ namespace AutoFix
         /// 阶段：还原点 → 停进程/服务 → 多轮卸载 → 目录 → 快捷方式 → 缓存 → 注册表 → 复查。
         /// </summary>
         internal static string UninstallProducts(List<ProductItem> selected, bool restorePoint,
-            bool deepClean, bool multiUser, Action<string> log)
+            bool deepClean, bool multiUser, bool cleanInstallers, Action<string> log)
         {
             var report = new StringBuilder();
             int ok = 0, failed = 0;
@@ -268,7 +292,7 @@ namespace AutoFix
             // --- 深度清理 ---
             if (deepClean)
             {
-                List<string> notes = RunDeepClean(false, multiUser, log);
+                List<string> notes = RunDeepClean(false, multiUser, cleanInstallers, log);
                 foreach (string n in notes)
                 {
                     Log(log, "  · " + n);
