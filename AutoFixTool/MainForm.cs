@@ -31,6 +31,14 @@ namespace AutoFix
             public bool IsLicenseLookup;                          // 只读产品密钥查询
             public bool IsProductUninstall;                       // 打开产品卸载窗口
             public bool IsVerify;                                 // 清理后校验
+            public bool IsDeepCleanOnly;                          // 仅深度清理残留
+            public bool IsVerify17;                               // 17 项完整验证
+            public bool IsAudit;                                  // 完整系统审计（只读）
+            public bool IsDesktopConnector;                        // Desktop Connector 工作区
+            public bool IsRestartPending;                          // 修复重启挂起
+            public bool IsBackup;                                  // 备份模板与设置
+            public bool IsProductScan;                             // 独立扫描产品
+            public bool FullClean;                                  // 全量卸载并深度清理
         }
 
         private sealed class Category
@@ -536,36 +544,90 @@ namespace AutoFix
                 IsVolumeCache = true
             });
 
-            var residue = new Category
-            {
-                Name = "残留检测",
-                Intro = "只读扫描卸载后遗留的 Autodesk 残留，覆盖注册表、文件目录、服务、进程、卸载项、快捷方式六个维度。不修改任何设置。"
-            };
-            residue.Items.Add(new FixItem
-            {
-                Name = "扫描残留",
-                Desc = "扫描六类 Autodesk 残留并在结果页中查看、筛选、导出。",
-                IsResidueScan = true
-            });
-            residue.Items.Add(new FixItem
-            {
-                Name = "清理后校验",
-                Desc = "10 项只读检查：ODIS 锁文件、IFEO 劫持、组件版本、Access 服务、ODIS 基础设施、"
-                     + ".pit 文件、TEMP 路径、VC++ 运行库、事件日志、hosts 条目。判断是否已具备干净重装条件。",
-                IsVerify = true
-            });
-
             var uninst = new Category
             {
                 Name = "产品卸载清理",
-                Intro = "扫描并卸载已安装的 Autodesk 产品。按「还原点 → 停进程/服务 → 多轮卸载 → 深度清理 → 复查」执行，"
-                      + "适用于常规卸载失败、卸载后残留导致无法重装的情况。"
+                Intro = "Autodesk 卸载与清理工作台。覆盖扫描、卸载、深度清理、验证、审计、"
+                      + "组件工作区与重启挂起处理。所有破坏性操作都会先出确认框；"
+                      + "建议先开顶栏的预演模式看一遍影响范围。"
             };
             uninst.Items.Add(new FixItem
             {
-                Name = "卸载已安装产品",
-                Desc = "扫描已安装的 Autodesk 产品，勾选后按阶段卸载，可选深度清理残留。",
+                Name = "1 扫描已安装产品",
+                Desc = "只读扫描，列出本机已安装的 Autodesk 产品与版本。",
+                IsProductScan = true
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "2 卸载选中产品",
+                Desc = "勾选要卸载的产品，按「停进程/服务 → 多轮卸载 → 复查」执行。",
                 IsProductUninstall = true
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "3 全量卸载并深度清理",
+                Desc = "勾选产品后卸载，并自动执行完整深度清理（目录/快捷方式/缓存/注册表/服务/任务/防火墙）。",
+                IsProductUninstall = true,
+                FullClean = true
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "4 仅深度清理残留",
+                Desc = "不卸载任何产品，只清理残留。适用于产品已卸载但残留导致无法重装的情况。",
+                IsDeepCleanOnly = true
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "5 完整验证（17 项）",
+                Desc = "只读验证 17 个维度：产品、进程、服务、目录、注册表、许可、环境变量、"
+                     + "幽灵项、快捷方式、计划任务、防火墙、IFEO、PFRO、hosts、Desktop Connector。",
+                IsVerify17 = true
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "6 创建系统还原点",
+                Desc = "在执行高危操作前创建还原点。",
+                Warn = "  · 调用系统还原接口创建一个还原点\r\n" +
+                       "  · 需要系统盘已开启「系统保护」，否则会失败\r\n" +
+                       "  · 创建过程可能需要数十秒",
+                Run = RepairService.CreateRestorePoint
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "7 搜索全部残留",
+                Desc = "只读扫描六类 Autodesk 残留：注册表、文件目录、服务、进程、卸载项、快捷方式。",
+                IsResidueScan = true
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "8 完整系统审计",
+                Desc = "只读预览：列出完整清理会删除的全部内容（17 个分类），先看清楚再决定。",
+                IsAudit = true
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "9 清理Desktop Connector工作区",
+                Desc = "删除 Desktop Connector 的本地同步目录（%USERPROFILE%\\DC 与 \\ACCDocs）。",
+                IsDesktopConnector = true
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "10 错误103诊断修复",
+                Desc = "10 项只读诊断，定位错误 103 的成因：ODIS 锁文件、IFEO 劫持、组件版本、"
+                     + "Access 服务、ODIS 基础设施、.pit、TEMP、VC++、事件日志、hosts。",
+                IsVerify = true
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "11 修复重启挂起",
+                Desc = "检查并清除全部 5 类挂起的重启标记，然后刷新 Windows Installer。",
+                IsRestartPending = true
+            });
+            uninst.Items.Add(new FixItem
+            {
+                Name = "12 备份模板与设置",
+                Desc = "把 Autodesk 用户配置、模板、工作空间备份到指定目录（复制，不修改原文件）。",
+                IsBackup = true
             });
 
             var lic = new Category
@@ -614,7 +676,6 @@ namespace AutoFix
             _cats.Add(perm);
             _cats.Add(comp);
             _cats.Add(ext);
-            _cats.Add(residue);
             _cats.Add(uninst);
             _cats.Add(lic);
             _cats.Add(disk);
@@ -950,7 +1011,7 @@ namespace AutoFix
 
             if (item.IsProductUninstall)
             {
-                RunProductUninstall();
+                RunProductUninstall(item.FullClean);
                 return;
             }
 
@@ -960,9 +1021,51 @@ namespace AutoFix
                 return;
             }
 
+            if (item.IsProductScan)
+            {
+                RunProductScan();
+                return;
+            }
+
+            if (item.IsDeepCleanOnly)
+            {
+                RunDeepCleanOnly();
+                return;
+            }
+
+            if (item.IsVerify17)
+            {
+                RunVerify17();
+                return;
+            }
+
+            if (item.IsAudit)
+            {
+                RunAudit();
+                return;
+            }
+
+            if (item.IsDesktopConnector)
+            {
+                RunDesktopConnector();
+                return;
+            }
+
+            if (item.IsRestartPending)
+            {
+                RunRestartPending();
+                return;
+            }
+
+            if (item.IsBackup)
+            {
+                RunBackup();
+                return;
+            }
+
             if (item.IsProductUninstall)
             {
-                RunProductUninstall();
+                RunProductUninstall(false);
                 return;
             }
 
@@ -1336,7 +1439,7 @@ namespace AutoFix
         }
 
         /// <summary>扫描已安装产品 → 勾选确认 → 按阶段卸载。</summary>
-        private void RunProductUninstall()
+        private void RunProductUninstall(bool forceDeepClean)
         {
             _busy = true;
             SetButtonsEnabled(false);
@@ -1392,6 +1495,10 @@ namespace AutoFix
                             bool rp = f.CreateRestorePoint;
                             bool deep = f.DeepClean;
                             bool multi = f.MultiUser;
+                            if (forceDeepClean)
+                            {
+                                deep = true;
+                            }
 
                             _status.Text = RepairService.DryRun ? "预演中，请稍候..." : "正在卸载，请稍候...";
                             AppendLog("—— 开始卸载 " + sel.Count + " 个产品 ——");
@@ -1499,6 +1606,293 @@ namespace AutoFix
             });
             t.IsBackground = true;
             t.Start();
+        }
+
+        /// <summary>通用后台执行：处理忙碌状态、日志与结果弹窗。</summary>
+        private void RunWork(string busyStatus, string logBegin, Func<string> work)
+        {
+            _busy = true;
+            SetButtonsEnabled(false);
+            _status.Text = busyStatus;
+            AppendLog(logBegin);
+
+            if (RepairService.DryRun)
+            {
+                RepairService.ResetDryRunCounter();
+            }
+
+            var t = new Thread(() =>
+            {
+                string result;
+                bool failed;
+                try
+                {
+                    result = work() ?? "";
+                    failed = result.Contains("失败") || result.Contains("异常");
+                }
+                catch (Exception ex)
+                {
+                    result = "执行时发生异常：" + ex.Message;
+                    failed = true;
+                }
+
+                try
+                {
+                    BeginInvoke((Action)(() =>
+                    {
+                        _busy = false;
+                        SetButtonsEnabled(true);
+                        UpdateStatus();
+                        AppendLog("—— 结束 ——");
+
+                        if (RepairService.DryRun)
+                        {
+                            string head = "[预演模式] 共 " + RepairService.DryRunActionCount
+                                        + " 项操作，均未实际执行。" + Environment.NewLine
+                                        + "详细清单见下方日志。" + Environment.NewLine + Environment.NewLine;
+                            MessageBox.Show(this, head + result, "预演结果",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        else
+                        {
+                            MessageBox.Show(this, result, failed ? "执行失败" : "操作完成",
+                                MessageBoxButtons.OK, failed ? MessageBoxIcon.Hand : MessageBoxIcon.Information);
+                        }
+                    }));
+                }
+                catch { }
+            });
+            t.IsBackground = true;
+            t.Start();
+        }
+
+        /// <summary>#1 只读扫描已安装产品。</summary>
+        private void RunProductScan()
+        {
+            RunWork("正在扫描产品...", "—— 扫描已安装产品 ——", () =>
+            {
+                List<ProductItem> list = RepairService.ScanInstalledProducts();
+                if (list.Count == 0)
+                {
+                    AppendLog("未检测到已安装的 Autodesk 产品。");
+                    return "未检测到已安装的 Autodesk 产品。";
+                }
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("检测到 " + list.Count + " 个 Autodesk 产品：");
+                sb.AppendLine();
+                foreach (ProductItem p in list)
+                {
+                    string line = p.Name + (string.IsNullOrEmpty(p.Version) ? "" : "  " + p.Version);
+                    AppendLog("  · " + line);
+                    sb.AppendLine("  · " + line);
+                }
+                return sb.ToString();
+            });
+        }
+
+        /// <summary>#4 仅深度清理残留。</summary>
+        private void RunDeepCleanOnly()
+        {
+            bool multi = MessageBox.Show(this,
+                "是否同时清理其他用户配置文件中的 Autodesk 残留？" + Environment.NewLine + Environment.NewLine
+                + "选择「是」将同时处理其他用户的注册表与 AppData（已登录用户会跳过）。",
+                "多用户清理", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+
+            string warn = "「仅深度清理残留」将执行以下操作：" + Environment.NewLine + Environment.NewLine
+                + "  · 结束 23 个 Autodesk 相关进程、停止 5 个服务" + Environment.NewLine
+                + "  · 永久删除 7 个残留目录（含 Program Files / ProgramData 下的 Autodesk）" + Environment.NewLine
+                + "  · 清理桌面与开始菜单快捷方式" + Environment.NewLine
+                + "  · 清理缓存目录" + Environment.NewLine
+                + "  · 删除服务注册、计划任务、防火墙规则" + Environment.NewLine
+                + "  · 清理 IFEO 劫持项、HKCU 类键、注册表分支、相关环境变量" + Environment.NewLine
+                + (multi ? "  · 清理其他用户配置文件" + Environment.NewLine : "")
+                + "  · 刷新 Windows Installer 服务" + Environment.NewLine + Environment.NewLine
+                + "⚠ 不会卸载任何产品，但会删除残留目录与注册表，不可撤销。" + Environment.NewLine + Environment.NewLine
+                + "确认执行？";
+
+            if (MessageBox.Show(this, warn, "确认深度清理",
+                    MessageBoxButtons.OKCancel, MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2) != DialogResult.OK)
+            {
+                AppendLog("已取消深度清理");
+                return;
+            }
+
+            if (!RepairService.DryRun && !RepairService.IsAdministrator())
+            {
+                MessageBox.Show(this, "该操作需要管理员权限。\r\n\r\n请以管理员身份重新运行本程序。",
+                    "权限不足", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            RunWork(RepairService.DryRun ? "预演中..." : "正在深度清理...", "—— 深度清理残留 ——",
+                () => RepairService.DeepCleanOnly(multi, AppendLog));
+        }
+
+        /// <summary>#5 17 项完整验证。</summary>
+        private void RunVerify17()
+        {
+            _busy = true;
+            SetButtonsEnabled(false);
+            _status.Text = "正在执行 17 项验证...";
+            AppendLog("—— 17 项完整验证 ——");
+
+            var t = new Thread(() =>
+            {
+                List<VerifyItem> items = null;
+                string error = null;
+                try { items = RepairService.RunFullVerification(AppendLog); }
+                catch (Exception ex) { error = ex.Message; }
+
+                try
+                {
+                    BeginInvoke((Action)(() =>
+                    {
+                        _busy = false;
+                        SetButtonsEnabled(true);
+                        UpdateStatus();
+                        AppendLog("—— 验证结束 ——");
+                        if (items == null)
+                        {
+                            MessageBox.Show(this, "验证失败：" + error, "执行失败",
+                                MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                            return;
+                        }
+                        using (var f = new VerifyForm(items)) { f.ShowDialog(this); }
+                    }));
+                }
+                catch { }
+            });
+            t.IsBackground = true;
+            t.Start();
+        }
+
+        /// <summary>#8 完整系统审计（只读预览）。</summary>
+        private void RunAudit()
+        {
+            _busy = true;
+            SetButtonsEnabled(false);
+            _status.Text = "正在审计系统足迹...";
+            AppendLog("—— 完整系统审计（只读） ——");
+
+            var t = new Thread(() =>
+            {
+                string report = null;
+                string error = null;
+                try { report = RepairService.RunSystemAudit(AppendLog); }
+                catch (Exception ex) { error = ex.Message; }
+
+                try
+                {
+                    BeginInvoke((Action)(() =>
+                    {
+                        _busy = false;
+                        SetButtonsEnabled(true);
+                        UpdateStatus();
+                        AppendLog("—— 审计结束 ——");
+                        if (report == null)
+                        {
+                            MessageBox.Show(this, "审计失败：" + error, "执行失败",
+                                MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                            return;
+                        }
+                        using (var f = new AuditForm(report)) { f.ShowDialog(this); }
+                    }));
+                }
+                catch { }
+            });
+            t.IsBackground = true;
+            t.Start();
+        }
+
+        /// <summary>#9 清理 Desktop Connector 工作区（需手输 YES）。</summary>
+        private void RunDesktopConnector()
+        {
+            string desc = RepairService.DescribeDesktopConnectorWorkspace();
+            if (desc == null)
+            {
+                MessageBox.Show(this, "未发现 Desktop Connector 本地工作区（%USERPROFILE%\\DC 或 \\ACCDocs）。",
+                    "无需处理", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (!RepairService.DryRun && !RepairService.IsAdministrator())
+            {
+                MessageBox.Show(this, "该操作需要管理员权限。\r\n\r\n请以管理员身份重新运行本程序。",
+                    "权限不足", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (RepairService.DryRun)
+            {
+                RunWork("预演中...", "—— Desktop Connector 工作区（预演） ——",
+                    () => RepairService.CleanDesktopConnectorWorkspace(AppendLog));
+                return;
+            }
+
+            using (var f = new TextConfirmForm("删除 Desktop Connector 工作区", desc, "YES"))
+            {
+                if (f.ShowDialog(this) != DialogResult.OK)
+                {
+                    AppendLog("已取消 Desktop Connector 工作区清理");
+                    return;
+                }
+            }
+
+            RunWork("正在清理工作区...", "—— 清理 Desktop Connector 工作区 ——",
+                () => RepairService.CleanDesktopConnectorWorkspace(AppendLog));
+        }
+
+        /// <summary>#11 修复重启挂起。</summary>
+        private void RunRestartPending()
+        {
+            string warn = "「修复重启挂起」将检查并清除以下标记：" + Environment.NewLine + Environment.NewLine
+                + "  · PendingFileRenameOperations" + Environment.NewLine
+                + "  · WindowsUpdate\\Auto Update\\RebootRequired" + Environment.NewLine
+                + "  · WindowsUpdate\\Orchestrator\\RebootRequired" + Environment.NewLine
+                + "  · Updates\\UpdateExeVolatile（置 0）" + Environment.NewLine
+                + "  · Component Based Servicing\\RebootPending" + Environment.NewLine
+                + "  · 刷新 Windows Installer 服务" + Environment.NewLine + Environment.NewLine
+                + "说明：这些标记会阻止 Autodesk 安装，清除通常不需要真正重启。" + Environment.NewLine + Environment.NewLine
+                + "确认执行？";
+
+            if (MessageBox.Show(this, warn, "确认修复重启挂起",
+                    MessageBoxButtons.OKCancel, MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2) != DialogResult.OK)
+            {
+                AppendLog("已取消修复重启挂起");
+                return;
+            }
+
+            if (!RepairService.DryRun && !RepairService.IsAdministrator())
+            {
+                MessageBox.Show(this, "该操作需要管理员权限。\r\n\r\n请以管理员身份重新运行本程序。",
+                    "权限不足", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            RunWork("正在处理重启标记...", "—— 修复重启挂起 ——",
+                () => RepairService.FixRestartPending(AppendLog));
+        }
+
+        /// <summary>#12 备份模板与设置。</summary>
+        private void RunBackup()
+        {
+            string dest;
+            using (var dlg = new FolderBrowserDialog())
+            {
+                dlg.Description = "选择备份保存位置";
+                dlg.ShowNewFolderButton = true;
+                if (dlg.ShowDialog(this) != DialogResult.OK)
+                {
+                    return;
+                }
+                dest = dlg.SelectedPath;
+            }
+
+            RunWork("正在备份...", "—— 备份 Autodesk 模板与设置 ——",
+                () => RepairService.BackupAutodeskData(dest, AppendLog));
         }
 
         private void UpdateStatus()
