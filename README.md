@@ -4,6 +4,8 @@
 
 面向 Windows 的 Autodesk 产品**安装故障修复与残留清理**工具箱。图形界面，完全离线，无需登录。
 
+English: [README.en.md](./README.en.md)
+
 ## 特点
 
 - **完全离线** —— 不发起任何网络请求，不下载任何文件
