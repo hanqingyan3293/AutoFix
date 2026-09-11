@@ -1499,6 +1499,17 @@ namespace AutoFix
                                 deep = true;
                             }
 
+                            // 深度清理会删除共用组件：逐项确认，默认全部保留
+                            List<RiskyTarget> risky = deep ? PromptRiskyTargets() : new List<RiskyTarget>();
+                            if (risky == null)
+                            {
+                                _busy = false;
+                                SetButtonsEnabled(true);
+                                UpdateStatus();
+                                AppendLog("已取消产品卸载（共用组件确认被取消）");
+                                return;
+                            }
+
                             _status.Text = RepairService.DryRun ? "预演中，请稍候..." : "正在卸载，请稍候...";
                             AppendLog("—— 开始卸载 " + sel.Count + " 个产品 ——");
                             if (RepairService.DryRun)
@@ -1512,7 +1523,7 @@ namespace AutoFix
                                 bool failed;
                                 try
                                 {
-                                    result = RepairService.UninstallProducts(sel, rp, deep, multi, cleanInst, AppendLog);
+                                    result = RepairService.UninstallProducts(sel, rp, deep, multi, cleanInst, risky, AppendLog);
                                     failed = result.Contains("失败");
                                 }
                                 catch (Exception ex)
@@ -1690,6 +1701,57 @@ namespace AutoFix
         }
 
         /// <summary>#4 仅深度清理残留。</summary>
+        /// <summary>
+        /// 若有本机存在的「有争议删除项」，弹出逐项选择。
+        /// 返回 null 表示用户取消；返回列表表示可以继续（含保留决策）。
+        /// </summary>
+        private List<RiskyTarget> PromptRiskyTargets()
+        {
+            List<RiskyTarget> existing;
+            try
+            {
+                existing = RepairService.ExistingRiskyTargets();
+            }
+            catch
+            {
+                return new List<RiskyTarget>();
+            }
+
+            if (existing.Count == 0)
+            {
+                return new List<RiskyTarget>();
+            }
+
+            using (var f = new RiskyTargetsForm(existing))
+            {
+                if (f.ShowDialog(this) != DialogResult.OK)
+                {
+                    return null;
+                }
+                f.ApplyDecisions();
+            }
+
+            int del = 0;
+            foreach (RiskyTarget t in existing)
+            {
+                if (!t.Keep)
+                {
+                    del++;
+                    AppendLog("已选择删除共用组件：" + t.Path);
+                }
+                else
+                {
+                    AppendLog("已选择保留共用组件：" + t.Path);
+                }
+            }
+            if (del == 0)
+            {
+                AppendLog("全部保留共用组件目录，不会删除它们。");
+            }
+
+            return existing;
+        }
+
         private void RunDeepCleanOnly()
         {
             bool multi;
@@ -1705,6 +1767,14 @@ namespace AutoFix
                 cleanInst = opt.CleanInstallers;
             }
 
+            // 有争议的删除项：逐项确认，默认全部保留
+            List<RiskyTarget> risky = PromptRiskyTargets();
+            if (risky == null)
+            {
+                AppendLog("已取消深度清理");
+                return;
+            }
+
             string warn = "「仅深度清理残留」将执行以下操作：" + Environment.NewLine + Environment.NewLine
                 + "  · 结束 23 个 Autodesk 相关进程、停止 5 个服务" + Environment.NewLine
                 + "  · 调用共享组件官方卸载程序（Desktop App / Identity Manager / ODIS / AdskLicensing）" + Environment.NewLine
@@ -1716,7 +1786,7 @@ namespace AutoFix
                 + (multi ? "  · 清理其他用户配置文件" + Environment.NewLine : "")
                 + "  · 刷新 Windows Installer 服务" + Environment.NewLine + Environment.NewLine
                 + "⚠ 不会卸载已安装产品，但会删除残留目录与注册表，不可撤销。" + Environment.NewLine
-                + "⚠ 其中 FlexNet Publisher 为多厂商共用组件，删除可能影响其他使用 FlexNet 授权的软件。" + Environment.NewLine + Environment.NewLine
+                + "⚠ 被多个厂商共用的组件（如 FlexNet Publisher）会在下一步单独列出，由你逐项决定保留或删除。" + Environment.NewLine + Environment.NewLine
                 + "确认执行？";
 
             if (MessageBox.Show(this, warn, "确认深度清理",
@@ -1735,7 +1805,7 @@ namespace AutoFix
             }
 
             RunWork(RepairService.DryRun ? "预演中..." : "正在深度清理...", "—— 深度清理残留 ——",
-                () => RepairService.DeepCleanOnly(multi, cleanInst, AppendLog));
+                () => RepairService.DeepCleanOnly(multi, cleanInst, risky, AppendLog));
         }
 
         /// <summary>#5 17 项完整验证。</summary>

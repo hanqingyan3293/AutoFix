@@ -335,15 +335,28 @@ change --prod_key <产品密钥> --prod_ver <2024.0.0.F> --lic_method NETWORK|ST
 
 ## 需要注意的风险点
 
-1. **FlexNet Publisher 为多厂商共用组件。** 参考项目在 Phase E 中无条件删除
-   `C:\Program Files\Common Files\Macrovision Shared`。该目录下的 FlexNet 授权运行时
-   被 Adobe、PTC、Siemens 等厂商的产品共用，删除后**可能影响其他使用 FlexNet 授权的软件**。
-   本工具保留该行为（与参考项目一致），但在确认框中单独警示。
-   如需移除这一项，删掉 `RepairService.Uninstall.cs` 中 `UninstallFolders` 的最后一行即可。
+### 共用组件：逐项选择保留或删除
 
-2. **安装包与下载缓存清理默认关闭。** 该步骤会删除用户「下载」目录中匹配
-   `*Autodesk*` 的安装包——即你自己下载保存的安装程序，删除后重装需重新下载。
-   因参考项目将其置于 `CLEAN_INSTALLERS` 可选开关之后，本工具同样做成显式勾选项。
+有些目录**不是 Autodesk 专属**，删除它们可能影响其他软件。深度清理进入 Phase E 之前，
+会把这些项目单独列出，由你逐项决定；**默认全部「保留」**，必须显式勾选「删除」才会删。
+
+| 项目 | 为什么有争议 |
+| --- | --- |
+| `C:\Program Files\Common Files\Macrovision Shared` | FlexNet Publisher 授权运行时，被 Adobe、PTC、Siemens 等厂商共用。删除后其他使用 FlexNet 授权的软件可能无法激活 |
+| `C:\Program Files\Common Files\Autodesk Shared` | 被多个 Autodesk 产品共用。若仍有未卸载的 Autodesk 产品，删除会影响它们 |
+| `C:\Program Files (x86)\Common Files\Autodesk Shared` | 同上，供 32 位产品使用 |
+
+只有**本机实际存在**的项目才会出现在提示中；一个都没有时不会弹窗。
+你的选择会记入执行日志（「已选择保留共用组件」/「已选择删除共用组件」）。
+
+参考项目在 Phase E 中对这些目录**无条件删除**；本工具改为显式选择，默认更保守。
+需要调整清单时，编辑 `RiskyTargets.cs` 中的列表即可。
+
+### 安装包与下载缓存清理默认关闭
+
+该步骤会删除用户「下载」目录中匹配 `*Autodesk*` 的安装包——即你自己下载保存的安装程序，
+删除后重装需重新下载。因参考项目将其置于 `CLEAN_INSTALLERS` 可选开关之后，
+本工具同样做成显式勾选项（在产品卸载 / 深度清理的选项里）。
 
 以下两项是忠实还原原程序逻辑的结果，但**判断依据较宽，影响范围可能超出 Autodesk**，执行前请务必确认：
 

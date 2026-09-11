@@ -518,7 +518,7 @@ namespace AutoFix
         ///   → PATH → 多用户 → 刷新服务 → I（Genuine Service，放最后）。
         /// </summary>
         internal static List<string> RunDeepClean(bool stopProcessesFirst, bool multiUser,
-            bool cleanInstallers, Action<string> log)
+            bool cleanInstallers, List<RiskyTarget> riskyDecisions, Action<string> log)
         {
             var notes = new List<string>();
 
@@ -554,11 +554,18 @@ namespace AutoFix
             // --- Phase E ---
             Log(log, "[阶段 E] 删除残留目录 ...");
             var locked = new List<string>();
+            var keptByUser = new List<string>();
             {
                 var allFolders = new List<string>(UninstallFolders);
                 allFolders.AddRange(UserLevelFolders());
                 foreach (string d in allFolders)
                 {
+                    if (IsKeptByUser(d, riskyDecisions))
+                    {
+                        Log(log, "  按你的选择保留：" + d);
+                        keptByUser.Add(d);
+                        continue;
+                    }
                     bool existed = false;
                     try { existed = Directory.Exists(d); } catch { }
                     DeleteDirectory(d, log);
@@ -567,6 +574,10 @@ namespace AutoFix
                         try { if (Directory.Exists(d)) { locked.Add(d); } } catch { }
                     }
                 }
+            }
+            if (keptByUser.Count > 0)
+            {
+                notes.Add("按你的选择保留了 " + keptByUser.Count + " 个共用组件目录");
             }
 
             // --- Phase E3 ---

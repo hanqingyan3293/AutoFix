@@ -221,7 +221,8 @@ namespace AutoFix
         /// 阶段：还原点 → 停进程/服务 → 多轮卸载 → 目录 → 快捷方式 → 缓存 → 注册表 → 复查。
         /// </summary>
         internal static string UninstallProducts(List<ProductItem> selected, bool restorePoint,
-            bool deepClean, bool multiUser, bool cleanInstallers, Action<string> log)
+            bool deepClean, bool multiUser, bool cleanInstallers,
+            List<RiskyTarget> riskyDecisions, Action<string> log)
         {
             var report = new StringBuilder();
             int ok = 0, failed = 0;
@@ -292,7 +293,7 @@ namespace AutoFix
             // --- 深度清理 ---
             if (deepClean)
             {
-                List<string> notes = RunDeepClean(false, multiUser, cleanInstallers, log);
+                List<string> notes = RunDeepClean(false, multiUser, cleanInstallers, riskyDecisions, log);
                 foreach (string n in notes)
                 {
                     Log(log, "  · " + n);
