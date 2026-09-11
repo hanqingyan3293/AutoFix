@@ -39,7 +39,7 @@ English: [README.en.md](./README.en.md)
 ## 编译
 
 ```
-git clone <本仓库地址>
+git clone https://github.com/hanqingyan3293/AutoFix.git
 cd <仓库目录>
 
 # 标准版（net472）

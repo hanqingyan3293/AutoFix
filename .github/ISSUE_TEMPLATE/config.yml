@@ -1,6 +1,5 @@
 blank_issues_enabled: true
 contact_links:
   - name: 安全问题报告（请勿公开提交）
-    url: https://github.com/OWNER/REPO/security/advisories/new
+    url: https://github.com/hanqingyan3293/AutoFix/security/advisories/new
     about: 涉及越权删除、预演模式失效等安全问题，请使用私密渠道，详见 SECURITY.md
-

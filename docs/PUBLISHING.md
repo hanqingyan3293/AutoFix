@@ -2,18 +2,19 @@
 
 按顺序执行。方括号内是需要你确认或替换的内容。
 
-## 1. 替换占位符
+## 1. 确认占位符已替换
 
-仓库创建后，把 `OWNER/REPO` 替换为实际的 `用户名/仓库名`：
+仓库地址固定为 `hanqingyan3293/AutoFix`。发布前确认仓库内没有遗留占位符：
 
 ```
-rg -n 'OWNER/REPO' .
+rg -n 'OWNER/REPO|<repository URL>|<本仓库地址>' .
 ```
 
-应命中的文件：
+应无输出。涉及的文件：
 
 - `CHANGELOG.md`（版本链接）
 - `.github/ISSUE_TEMPLATE/config.yml`（安全报告链接）
+- `README.md` / `README.en.md`（clone 地址）
 
 ## 2. 确认仓库内容干净
 
@@ -52,17 +53,17 @@ certutil -hashfile AutoFixTool/bin/Release/net40/AutoFix.exe   SHA256
 
 把结果填入 `docs/RELEASE-NOTES-v1.0.0.md` 的「校验下载」一节。
 
-## 5. 首次推送
+## 5. 推送
+
+远端已配置为 `origin` → `https://github.com/hanqingyan3293/AutoFix.git`，默认分支 `main`：
 
 ```
 git add -A
-git commit -m "文档: 准备首次发布"
-git branch -M main
-git remote add origin https://github.com/OWNER/REPO.git
-git push -u origin main
+git commit -m "文档: ..."
+git push origin main
 ```
 
-> 若使用个人访问令牌推送，请用 `git credential` 或环境变量方式提供，
+> 若使用个人访问令牌推送，请通过 `git credential`、环境变量或临时文件提供，
 > **不要**把令牌写进仓库文件、`.git/config` 的 URL 或提交历史。
 
 ## 6. 打标签并发 Release

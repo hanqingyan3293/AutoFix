@@ -65,4 +65,4 @@
 - 需要联网的功能未纳入，以保持完全离线
 - CAD 版本降级与瘦身依赖本机已安装的 ODA File Converter 与 AutoCAD
 
-[1.0.0]: https://github.com/OWNER/REPO/releases/tag/v1.0.0
+[1.0.0]: https://github.com/hanqingyan3293/AutoFix/releases/tag/v1.0.0

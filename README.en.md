@@ -39,7 +39,7 @@ Chinese: [README.md](./README.md)
 ## Build
 
 ```
-git clone <repository URL>
+git clone https://github.com/hanqingyan3293/AutoFix.git
 cd <repository directory>
 
 # Standard build (net472)
