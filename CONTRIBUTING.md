@@ -8,8 +8,8 @@
 - .NET SDK 8.0 或更高（用于构建 net472 / net40 两个目标框架）
 
 ```
-dotnet build AutoFixTool/AutoFix.csproj      -c Release
-dotnet build AutoFixTool/AutoFix.net40.csproj -c Release
+dotnet build src/Autodesk-Fix.csproj      -c Release
+dotnet build src/Autodesk-Fix.net40.csproj -c Release
 ```
 
 构建应保持 **0 警告 0 错误**。
@@ -17,7 +17,7 @@ dotnet build AutoFixTool/AutoFix.net40.csproj -c Release
 ## 项目结构
 
 ```
-AutoFixTool/
+src/
   MainForm.cs                     主窗体：分类导航 + 功能网格 + 日志
   RepairService*.cs               修复与清理逻辑（按主题拆分为多个 partial 文件）
   *Form.cs                        各功能窗口（结果页、卸载工作台、许可配置等）
@@ -69,7 +69,7 @@ docs/                             文档与维护者清单
 提交前可自查：
 
 ```
-rg -n 'SetValue|DeleteValue|DeleteSubKey|CreateSubKey|WriteAll|Directory\.Delete|File\.Delete|SetAccessControl|Kill\(' AutoFixTool/RepairService.Detection.cs AutoFixTool/ResidueScan.cs
+rg -n 'SetValue|DeleteValue|DeleteSubKey|CreateSubKey|WriteAll|Directory\.Delete|File\.Delete|SetAccessControl|Kill\(' src/RepairService.Detection.cs src/ResidueScan.cs
 ```
 
 应当无输出。
@@ -94,7 +94,7 @@ rg -n 'SetValue|DeleteValue|DeleteSubKey|CreateSubKey|WriteAll|Directory\.Delete
 2. 返回中文结果说明；失败路径的文案需包含「失败」或「异常」（界面据此判定为失败）
 3. 所有破坏性操作走受控包装（见上）
 4. 在 `MainForm.BuildCatalog()` 中把 `FixItem` 加入合适的分类，填写 `Desc` 与 `Warn`
-5. 更新 `AutoFixTool/README.md` 的功能清单与项数
+5. 更新 `src/README.md` 的功能清单与项数
 6. 在 `CHANGELOG.md` 的未发布段落中记一笔
 
 ## 提交与 PR

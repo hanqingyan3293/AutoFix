@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>Autodesk-Fix</AssemblyName>
+    <RootNamespace>AutodeskFix</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <AssemblyTitle>Autodesk 修复工具箱</AssemblyTitle>
+    <Product>Autodesk-Fix</Product>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Management" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets/AutodeskProducts.txt" />
+    <!-- 内嵌为托管资源，供窗体设置 Icon（ApplicationIcon 只影响 exe 在资源管理器中的显示） -->
+    <EmbeddedResource Include="app.ico" />
+  </ItemGroup>
+
+</Project>

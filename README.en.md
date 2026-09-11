@@ -1,6 +1,6 @@
 # Autodesk Fix Toolbox
 
-<img src="docs/images/icon/AutoFix_128.png" alt="Autodesk Fix Toolbox" width="96" height="96" align="right">
+<img src="docs/images/icon/Autodesk-Fix_128.png" alt="Autodesk Fix Toolbox" width="96" height="96" align="right">
 
 A Windows toolbox for **repairing Autodesk installation failures and cleaning up remnants**. Graphical interface, fully offline, no login required.
 
@@ -28,7 +28,7 @@ Chinese: [README.md](./README.md)
 | License Management | 5 | Network / standalone / user license switching, license reset, product key lookup |
 | Disk Cleanup | 1 | Volume cache cleanup via the built-in Windows Disk Cleanup engine |
 
-69 features in total. Full details: [AutoFixTool/README.md](AutoFixTool/README.md) (Chinese).
+69 features in total. Full details: [src/README.md](src/README.md) (Chinese).
 
 ## Requirements
 
@@ -39,28 +39,28 @@ Chinese: [README.md](./README.md)
 ## Build
 
 ```
-git clone https://github.com/hanqingyan3293/AutoFix.git
+git clone https://github.com/hanqingyan3293/Autodesk-Fix.git
 cd <repository directory>
 
 # Standard build (net472)
-dotnet build AutoFixTool/AutoFix.csproj -c Release
+dotnet build src/Autodesk-Fix.csproj -c Release
 
 # Compatibility build (net40, runs on Win7 SP1+)
-dotnet build AutoFixTool/AutoFix.net40.csproj -c Release
+dotnet build src/Autodesk-Fix.net40.csproj -c Release
 ```
 
 Output:
 
 ```
-AutoFixTool/bin/Release/net472/AutoFix.exe
-AutoFixTool/bin/Release/net40/AutoFix.exe
+src/bin/Release/net472/Autodesk-Fix.exe
+src/bin/Release/net40/Autodesk-Fix.exe
 ```
 
 No third-party DLL dependencies — a single file is enough to run.
 
 ## Usage
 
-1. Run `AutoFix.exe` as administrator (the manifest declares `requireAdministrator`)
+1. Run `Autodesk-Fix.exe` as administrator (the manifest declares `requireAdministrator`)
 2. Turn on **Dry-run mode** in the top bar first, run the feature you need, and check that the "will execute" list in the log matches your expectations
 3. Turn dry-run off and execute for real; every destructive action shows a confirmation dialog listing the **specific** operations
 4. On first launch you will see a SmartScreen warning (unsigned binary) — choose "More info → Run anyway"
@@ -73,7 +73,7 @@ No third-party DLL dependencies — a single file is enough to run.
 | Confirm dialogs default to Cancel | Pressing Enter by accident cancels instead of executing |
 | Type YES | Irreversible operations — full clean, deleting the Desktop Connector workspace — require manual input |
 | Read-only first | Detection and audit modules perform zero writes |
-| Back up before acting | Registry branches are exported as `.reg` before modification; hosts is backed up as `.autofix.bak` |
+| Back up before acting | Registry branches are exported as `.reg` before modification; hosts is backed up as `.autodesk-fix.bak` |
 
 ## Known Limitations
 
@@ -86,14 +86,14 @@ No third-party DLL dependencies — a single file is enough to run.
 ## Project Structure
 
 ```
-AutoFixTool/         Main application (WinForms, .NET Framework 4.0 / 4.7.2)
+src/                 Main application (WinForms, .NET Framework 4.0 / 4.7.2)
 docs/                Documentation, release notes, maintainer checklists
 docs/images/icon/    Icon assets (multi-size PNG + ICO + SVG source)
 ```
 
 ## Documentation
 
-- [AutoFixTool/README.md](AutoFixTool/README.md) — Feature details, dry-run mode, results page
+- [src/README.md](src/README.md) — Feature details, dry-run mode, results page
 - [CHANGELOG.md](CHANGELOG.md) — Version history
 - [CONTRIBUTING.md](CONTRIBUTING.md) — How to contribute
 - [SECURITY.md](SECURITY.md) — How to report security issues
@@ -106,7 +106,7 @@ docs/images/icon/    Icon assets (multi-size PNG + ICO + SVG source)
 
 Released under the [GNU AGPL-3.0](LICENSE) license.
 
-The project icon (AutoFix.ico / AutoFix.svg and the PNG set) is an original asset of this project
+The project icon (Autodesk-Fix.ico / Autodesk-Fix.svg and the PNG set) is an original asset of this project
 and is likewise released under AGPL-3.0.
 
 ```

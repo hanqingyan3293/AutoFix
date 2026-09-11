@@ -50,9 +50,9 @@ SOFTWARE.
 
 ### 包含的数据文件
 
-`AutoFixTool/Assets/AutodeskProducts.txt`（2020–2027，共 1073 条产品名称与密钥对照）来自该项目，
+`src/Assets/AutodeskProducts.txt`（2020–2027，共 1073 条产品名称与密钥对照）来自该项目，
 按 MIT 要求随附版权与许可说明，详见
-[AutoFixTool/Assets/README-来源与许可.txt](AutoFixTool/Assets/README-来源与许可.txt)。
+[src/Assets/README-来源与许可.txt](src/Assets/README-来源与许可.txt)。
 
 ```
 MIT License

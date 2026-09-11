@@ -11,10 +11,10 @@
 
 | 文件 | 适用环境 | 说明 |
 | --- | --- | --- |
-| `AutoFix.exe`（net472 版） | Windows 10 / 11 | 推荐，系统通常已自带 .NET Framework 4.7.2+ |
-| `AutoFix.exe`（net40 版） | Windows 7 SP1 及以上 | 只需 .NET Framework 4.0，兼容性最好 |
+| `Autodesk-Fix.exe`（net472 版） | Windows 10 / 11 | 推荐，系统通常已自带 .NET Framework 4.7.2+ |
+| `Autodesk-Fix.exe`（net40 版） | Windows 7 SP1 及以上 | 只需 .NET Framework 4.0，兼容性最好 |
 
-> 两个版本的 `AutoFix.exe` 文件名相同，请按所属文件夹区分（`net472` / `net40`）。
+> 两个版本的 `Autodesk-Fix.exe` 文件名相同，请按所属文件夹区分（`net472` / `net40`）。
 
 单文件，无第三方 DLL 依赖，复制到任意位置即可运行。
 
@@ -66,7 +66,7 @@
 | 许可管理 | 5 |
 | 磁盘清理 | 1 |
 
-完整说明见 [AutoFixTool/README.md](../AutoFixTool/README.md) 与 [CHANGELOG.md](../CHANGELOG.md)。
+完整说明见 [src/README.md](../src/README.md) 与 [CHANGELOG.md](../CHANGELOG.md)。
 
 ## 快速开始
 
@@ -97,11 +97,11 @@
 ## 校验下载
 
 ```
-AutoFix-net472-v1.0.0.exe
-SHA256: 823E62611E16B6912DBC6EA4657657144425FD78698C23110E736987395AE093
+Autodesk-Fix-net472-v1.0.0.exe
+SHA256: B752C5145638FDCCF1C8FEB15EF04C34198F9D01680CA3A628C9776EF9E43D4E
 
-AutoFix-net40-v1.0.0.exe
-SHA256: C348B8C81C97966B15E4177E5EDF34FC5703933C70B0CF721079F9D9F7280E1B
+Autodesk-Fix-net40-v1.0.0.exe
+SHA256: F2178A6018DA9DA627254690D24A297E3193E8878BA89F86DB59551650E8AD3F
 ```
 
 Windows 上可用 `certutil -hashfile <文件名> SHA256` 核对下载文件的完整性。

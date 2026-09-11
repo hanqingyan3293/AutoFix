@@ -4,7 +4,7 @@
 
 ## 1. 确认占位符已替换
 
-仓库地址固定为 `hanqingyan3293/AutoFix`。发布前确认仓库内没有遗留占位符：
+仓库地址固定为 `hanqingyan3293/Autodesk-Fix`。发布前确认仓库内没有遗留占位符：
 
 ```
 rg -n 'OWNER/REPO|<repository URL>|<本仓库地址>' .
@@ -38,8 +38,8 @@ git ls-files | rg '\.exe$|\.dll$|\.zip$|\.7z$'
 ## 3. 构建与验证
 
 ```
-dotnet build AutoFixTool/AutoFix.csproj       -c Release
-dotnet build AutoFixTool/AutoFix.net40.csproj -c Release
+dotnet build src/Autodesk-Fix.csproj       -c Release
+dotnet build src/Autodesk-Fix.net40.csproj -c Release
 ```
 
 两个目标框架均应 **0 警告 0 错误**。
@@ -47,15 +47,15 @@ dotnet build AutoFixTool/AutoFix.net40.csproj -c Release
 ## 4. 计算校验值
 
 ```
-certutil -hashfile AutoFixTool/bin/Release/net472/AutoFix.exe  SHA256
-certutil -hashfile AutoFixTool/bin/Release/net40/AutoFix.exe   SHA256
+certutil -hashfile src/bin/Release/net472/Autodesk-Fix.exe  SHA256
+certutil -hashfile src/bin/Release/net40/Autodesk-Fix.exe   SHA256
 ```
 
 把结果填入 `docs/RELEASE-NOTES-v1.0.0.md` 的「校验下载」一节。
 
 ## 5. 推送
 
-远端已配置为 `origin` → `https://github.com/hanqingyan3293/AutoFix.git`，默认分支 `main`：
+远端已配置为 `origin` → `https://github.com/hanqingyan3293/Autodesk-Fix.git`，默认分支 `main`：
 
 ```
 git add -A
@@ -79,8 +79,8 @@ git push origin v1.0.0
 - 标题：`Autodesk Fix Toolbox v1.0.0`
 - 正文：粘贴 `docs/RELEASE-NOTES-v1.0.0.md` 的内容
 - 上传两个 exe 作为 Assets，建议重命名以区分版本：
-  - `AutoFix-net472-v1.0.0.exe`
-  - `AutoFix-net40-v1.0.0.exe`
+  - `Autodesk-Fix-net472-v1.0.0.exe`
+  - `Autodesk-Fix-net40-v1.0.0.exe`
 
 Excel/记事本都可能改动换行，建议直接复制 Markdown 原文。
 

@@ -1,6 +1,6 @@
 # Autodesk Fix Toolbox
 
-<img src="docs/images/icon/AutoFix_128.png" alt="Autodesk Fix Toolbox" width="96" height="96" align="right">
+<img src="docs/images/icon/Autodesk-Fix_128.png" alt="Autodesk Fix Toolbox" width="96" height="96" align="right">
 
 面向 Windows 的 Autodesk 产品**安装故障修复与残留清理**工具箱。图形界面，完全离线，无需登录。
 
@@ -28,7 +28,7 @@ English: [README.en.md](./README.en.md)
 | 许可管理 | 5 | 网络 / 单机 / 用户许可切换、重置许可、产品密钥查询 |
 | 磁盘清理 | 1 | 调用 Windows 自带磁盘清理引擎处理卷缓存 |
 
-合计 69 项。完整说明见 [AutoFixTool/README.md](AutoFixTool/README.md)。
+合计 69 项。完整说明见 [src/README.md](src/README.md)。
 
 ## 环境要求
 
@@ -39,28 +39,28 @@ English: [README.en.md](./README.en.md)
 ## 编译
 
 ```
-git clone https://github.com/hanqingyan3293/AutoFix.git
+git clone https://github.com/hanqingyan3293/Autodesk-Fix.git
 cd <仓库目录>
 
 # 标准版（net472）
-dotnet build AutoFixTool/AutoFix.csproj -c Release
+dotnet build src/Autodesk-Fix.csproj -c Release
 
 # 兼容版（net40，可运行于 Win7 SP1+）
-dotnet build AutoFixTool/AutoFix.net40.csproj -c Release
+dotnet build src/Autodesk-Fix.net40.csproj -c Release
 ```
 
 产物路径：
 
 ```
-AutoFixTool/bin/Release/net472/AutoFix.exe
-AutoFixTool/bin/Release/net40/AutoFix.exe
+src/bin/Release/net472/Autodesk-Fix.exe
+src/bin/Release/net40/Autodesk-Fix.exe
 ```
 
 无第三方 DLL 依赖，单文件即可运行。
 
 ## 使用
 
-1. 以管理员身份运行 `AutoFix.exe`（清单已声明 `requireAdministrator`）
+1. 以管理员身份运行 `Autodesk-Fix.exe`（清单已声明 `requireAdministrator`）
 2. 建议先在顶栏开启**预演模式**，跑一遍目标功能，确认日志中「将执行」的清单符合预期
 3. 关闭预演模式后正式执行；每个破坏性操作都会弹出确认框并列出**具体**动作
 4. 首次运行会遇到 SmartScreen 提示（未签名程序），选择「更多信息 → 仍要运行」
@@ -73,7 +73,7 @@ AutoFixTool/bin/Release/net40/AutoFix.exe
 | 确认框默认取消 | 误按回车即取消，不会执行 |
 | 手输 YES | 全量清理、删除 Desktop Connector 工作区等不可恢复操作要求手动输入 |
 | 只读优先 | 检测与审计模块零写入 |
-| 操作前备份 | 修改注册表分支前导出 `.reg` 备份；改 hosts 前备份 `.autofix.bak` |
+| 操作前备份 | 修改注册表分支前导出 `.reg` 备份；改 hosts 前备份 `.autodesk-fix.bak` |
 
 ## 已知边界
 
@@ -86,14 +86,14 @@ AutoFixTool/bin/Release/net40/AutoFix.exe
 ## 项目结构
 
 ```
-AutoFixTool/         主程序（WinForms，.NET Framework 4.0 / 4.7.2）
+src/                 主程序（WinForms，.NET Framework 4.0 / 4.7.2）
 docs/                文档、发布说明、维护者清单
 docs/images/icon/    图标资源（多尺寸 PNG + ICO + SVG 源文件）
 ```
 
 ## 文档
 
-- [AutoFixTool/README.md](AutoFixTool/README.md) —— 功能详解、预演模式、检测结果页说明
+- [src/README.md](src/README.md) —— 功能详解、预演模式、检测结果页说明
 - [CHANGELOG.md](CHANGELOG.md) —— 版本历史
 - [CONTRIBUTING.md](CONTRIBUTING.md) —— 参与开发
 - [SECURITY.md](SECURITY.md) —— 安全问题报告方式
@@ -103,7 +103,7 @@ docs/images/icon/    图标资源（多尺寸 PNG + ICO + SVG 源文件）
 
 本项目以 [GNU AGPL-3.0](LICENSE) 许可发布。
 
-项目图标（AutoFix.ico / AutoFix.svg 及各级 PNG）为本项目自有资源，
+项目图标（Autodesk-Fix.ico / Autodesk-Fix.svg 及各级 PNG）为本项目自有资源，
 同样以 AGPL-3.0 发布。
 
 ```
